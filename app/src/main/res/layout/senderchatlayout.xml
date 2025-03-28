@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/sent_message_margin"
+    android:paddingHorizontal="@dimen/message_horizontal_padding"
+    android:paddingVertical="@dimen/message_vertical_padding">
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/messageContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        app:cardBackgroundColor="@color/sent_message_background"
+        app:cardCornerRadius="@dimen/message_corner_radius"
+        app:cardElevation="0dp"
+        app:contentPadding="0dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/sendermessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hyphenationFrequency="none"
+                android:paddingStart="@dimen/message_padding"
+                android:paddingTop="@dimen/message_padding"
+                android:paddingEnd="@dimen/message_time_width"
+                android:paddingBottom="@dimen/message_padding"
+                android:textColor="@color/message_text"
+                android:textIsSelectable="true"
+                android:textSize="@dimen/message_text_size"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="Sender Message Display Here"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/message_time_margin"
+                android:layout_marginBottom="@dimen/message_time_margin"
+                android:gravity="center_vertical"
+                app:layout_constraintBottom_toBottomOf="@id/sendermessage"
+                app:layout_constraintEnd_toEndOf="@id/sendermessage">
+
+                <TextView
+                    android:id="@+id/timeofmessage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/message_time_text"
+                    android:textSize="@dimen/message_time_text_size"
+                    tools:text="20:09"/>
+
+                <ImageView
+                    android:id="@+id/messageStatus"
+                    android:layout_width="@dimen/message_status_size"
+                    android:layout_height="@dimen/message_status_size"
+                    android:layout_marginStart="@dimen/message_status_margin"
+                    android:contentDescription="@string/message_status_description"
+                    app:tint="@color/message_status_tint"
+                    tools:src="@drawable/ic_message_sent"/>
+
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</RelativeLayout>
