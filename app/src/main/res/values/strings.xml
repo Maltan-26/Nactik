@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="message_input_hint">Type a message…</string>
+    <string name="send_button_text">Send</string>
+    <string name="back_button_description">Navigate back to previous screen</string>
+    <string name="update_profile_text">Update Profile</string>
+    <string name="app_title">Nactik</string>
+    <string name="toolbar_description">App toolbar</string>
+    <string name="tab_chats">Chats</string>
+    <string name="tab_status">Status</string>
+    <string name="tab_calls">Calls</string>
+    <string name="tab_chats_description">View chats</string>
+    <string name="tab_status_description">View status updates</string>
+    <string name="tab_calls_description">View calls</string>
+    <string name="app_logo_description">Chat App Logo</string>
+    <string name="otp_instruction_text">Chat App Will Send OTP To Your Entered Number</string>
+    <string name="phone_number_hint">Enter Your Number Here</string>
+    <string name="send_otp_button_text">Send OTP</string>
+    <string name="loading_description">Loading</string>
+    <string name="country_code_picker_description">Select your country code</string>
+    <string name="enter_otp_text">Enter The OTP Which You Received</string>
+    <string name="otp_input_hint">Enter the OTP here…</string>
+    <string name="change_number_text">Didn\'t Receive? Change Your Number</string>
+    <string name="verify_otp_button_text">Verify OTP</string>
+    <string name="your_profile_text">Your Profile</string>
+    <string name="profile_image_description">Profile picture</string>
+    <string name="name_input_hint">Enter your name</string>
+
+    <!-- Profile Section Headers -->
+    <string name="profile_personal_info">Personal Information</string>
+    <string name="profile_settings">Settings</string>
+
+    <!-- Profile Fields -->
+    <string name="profile_name">Name</string>
+    <string name="profile_status">Status</string>
+    <string name="profile_phone">Phone Number</string>
+    <string name="profile_email">Email</string>
+    <string name="profile_joined_date">Joined on %1$s</string>
+
+    <!-- Profile Actions -->
+    <string name="edit_profile">Edit Profile</string>
+    <string name="save_profile">Save Changes</string>
+    <string name="cancel_edit">Cancel</string>
+    <string name="change_photo">Change Photo</string>
+
+    <!-- Profile Status Options -->
+    <string name="status_online">Online</string>
+    <string name="status_offline">Offline</string>
+    <string name="status_away">Away</string>
+    <string name="status_busy">Busy</string>
+
+    <!-- Tooltips -->
+    <string name="tap_to_change_photo">Tap to change profile photo</string>
+    <string name="tap_to_edit">Tap to edit</string>
+
+    <!-- Error Messages -->
+    <string name="error_invalid_name">Please enter a valid name</string>
+    <string name="error_name_too_short">Name must be at least 3 characters</string>
+    <string name="error_name_too_long">Name cannot exceed 50 characters</string>
+    <string name="save_profile_title">Save Profile</string>
+    <string name="save_profile_button">Save Changes</string>
+    <string name="update_profile_title">Update Profile</string>
+    <string name="new_name_hint">Enter new name</string>
+    <string name="update_profile_button">Update</string>
+
+    <!-- Chat Related -->
+    <string name="message_hint">Type a message…</string>
+    <string name="send_button_description">Send message</string>
+    <string name="from_text">From: %1$s</string>
+
+    <!-- Company Info -->
+    <string name="company_name">ChatApp Inc.</string>
+
+    <!-- Calls Related -->
+    <string name="calls_title">Calls</string>
+    <string name="new_call_description">Start new call</string>
+    <string name="no_calls_description">No calls yet</string>
+    <string name="no_calls_message">Your calls will appear here</string>
+
+    <!-- Time Format -->
+    <string name="date_time_format">yyyy-MM-dd HH:mm:ss</string>
+    <string name="no_chats_description">No conversations yet</string>
+    <string name="no_chats_message">Start chatting with your friends</string>
+
+    <!-- Actions -->
+    <string name="new_chat_description">Start new chat</string>
+    <string name="message_status_description">Message status</string>
+    <string name="add_status_description">Add new status</string>
+    <string name="menu_profile">Profile</string>
+    <string name="menu_settings">Settings</string>
+    <!-- Status -->
+    <string name="my_status">My Status</string>
+    <string name="tap_to_add_status">Tap to add status update</string>
+    <string name="recent_updates">Recent Updates</string>
+    <!-- Validation Messages -->
+    <string name="error_network">Network error. Please try again.</string>
+</resources>

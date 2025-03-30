@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary_color">#075e54</color>
+    <color name="tab_text_color">#77a3a7</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="text_secondary">#6e6e6e</color>
+    <color name="button_green">#25d366</color>
+    <!-- Text Colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_hint">#BDBDBD</color>
+    <color name="accent_color">#2196F3</color>
+    <color name="background_gray">#F5F5F5</color>
+    <color name="chat_background">#FFFFFF</color>
+    <color name="send_button_color">#2196F3</color>
+    <color name="message_time_color">#757575</color>
+    <color name="sender_name_text">#2196F3</color>
+    <!-- Text Colors -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="timestamp_text">#757575</color>
+    <!-- Status Colors -->
+    <!-- Icon Colors -->
+    <color name="icon_color">#424242</color>
+    <color name="icon_tint_active">#2196F3</color>
+    <color name="icon_tint_inactive">#9E9E9E</color>
+    <color name="received_message_background">#FFFFFF</color>
+    <color name="sent_message_background">#E3F2FD</color>
+    <color name="message_text">#212121</color>
+    <color name="message_time_text">#757575</color>
+    <color name="message_status_tint">#4CAF50</color>
+
+    <!-- Status Colors -->
+    <color name="status_background">#FFFFFF</color>
+    <color name="status_subtitle">#757575</color>
+    <color name="fab_background">#2196F3</color>
+
+    <!-- Divider -->
+    <color name="divider_color">#EEEEEE</color>
+    <!-- Profile Specific Colors -->
+    <color name="profile_background">#FFFFFF</color>
+    <color name="profile_image_border">#2196F3</color>
+    <color name="profile_divider">#EEEEEE</color>
+
+    <!-- Status Colors -->
+    <color name="status_online">#4CAF50</color>
+    <color name="status_offline">#9E9E9E</color>
+    <color name="status_away">#FFC107</color>
+    <color name="status_busy">#F44336</color>
+
+    <color name="badge_color">#E53935</color>
+    <color name="badge_text_color">#FFFFFF</color>
+    <color name="badge_border_color">#FFFFFF</color>
+    <color name="primary">#2196F3</color>
+    <color name="primary_variant">#1976D2</color>
+    <color name="secondary">#03DAC6</color>
+    <color name="secondary_variant">#018786</color>
+
+
+    <!-- Splash screen colors -->
+    <color name="splash_background">#FFFFFF</color>
+    <color name="splash_icon_tint">@color/primary</color>
+
+</resources>

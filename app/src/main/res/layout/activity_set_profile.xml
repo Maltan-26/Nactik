@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:padding="@dimen/screen_padding"
+    tools:context=".setProfile">
+
+    <TextView
+        android:id="@+id/profile_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/getuserimage"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="@dimen/large_margin"
+        android:fontFamily="@font/raleway"
+        android:text="@string/save_profile_title"
+        android:textColor="@color/accent_color"
+        android:textSize="@dimen/title_text_size"
+        android:textStyle="bold"/>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/getuserimage"
+        android:layout_width="@dimen/profile_image_size"
+        android:layout_height="@dimen/profile_image_size"
+        android:layout_above="@+id/input_layout"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="@dimen/default_margin"
+        app:cardCornerRadius="@dimen/profile_image_radius"
+        app:cardElevation="@dimen/card_elevation">
+
+        <ImageView
+            android:id="@+id/getuserimageinimageview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/profile_image_description"
+            android:scaleType="centerCrop"
+            android:src="@drawable/defaultprofile"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"/>
+
+    </androidx.cardview.widget.CardView>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/input_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_marginHorizontal="@dimen/input_margin"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        app:startIconDrawable="@drawable/ic_person"
+        app:startIconTint="@color/icon_color"
+        app:errorEnabled="true">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/getusername"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/name_input_hint"
+            android:inputType="textCapWords"
+            android:maxLines="1"
+            android:imeOptions="actionDone"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/saveProfile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/input_layout"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="@dimen/default_margin"
+        android:minWidth="150dp"
+        android:text="@string/save_profile_button"
+        android:textColor="@color/white"
+        app:cornerRadius="@dimen/button_corner_radius"
+        app:backgroundTint="@color/accent_color"/>
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progressbarofsetProfile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/saveProfile"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="@dimen/default_margin"
+        android:visibility="invisible"
+        app:indicatorColor="@color/accent_color"
+        android:indeterminate="true"/>
+
+</RelativeLayout>
