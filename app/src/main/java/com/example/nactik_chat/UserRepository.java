@@ -1,9 +1,15 @@
 package com.example.nactik_chat;
 
+import static androidx.constraintlayout.widget.Constraints.TAG;
+
+import android.util.Log;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserRepository {
     private final DatabaseHelper dbHelper;
@@ -14,16 +20,17 @@ public class UserRepository {
 
     public User getUserById(String userId) throws SQLException {
         try (Connection conn = dbHelper.getConnection()) {
-            String sql = "SELECT * FROM users WHERE uid = ?";
+            String sql = "SELECT * FROM users WHERE user_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, userId);
                 ResultSet rs = stmt.executeQuery();
                 if (rs.next()) {
                     return new User(
-                            rs.getString("uid"),
-                            rs.getString("name"),
-                            rs.getString("image_url"),
-                            rs.getString("status")
+                            rs.getString("user_id"),
+                            rs.getString("username"),
+                            rs.getString("profile_image_url"),
+                            rs.getString("status"),
+                            rs.getString("phone_number")
                     );
                 }
                 throw new SQLException("User not found");
@@ -31,9 +38,44 @@ public class UserRepository {
         }
     }
 
+    public List<User> searchUsersByPhone(String phoneQuery) throws SQLException {
+        List<User> users = new ArrayList<>();
+
+        try (Connection conn = dbHelper.getConnection()) {
+            // Using LIKE for partial phone number matching
+            String sql = "SELECT * FROM users WHERE phone_number LIKE ? " +  // Exclude current user
+                    "ORDER BY username ASC " +
+                    "LIMIT 20";  // Limit results for performance
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, "%" + phoneQuery + "%"); // Exclude current user from results
+
+                Log.d(TAG, "Searching users with phone query: " + phoneQuery + " at " );
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    User user = new User(
+                            rs.getString("user_id"),
+                            rs.getString("username"),
+                            rs.getString("profile_image_url"),
+                            rs.getString("status"),
+                            rs.getString("phone_number")
+                    );
+                    users.add(user);
+                }
+            }
+        } catch (SQLException e) {
+            Log.e(TAG, "Error searching users by phone: " + e.getMessage());
+            throw e;
+        }
+
+        Log.d(TAG, "Found " + users.size() + " users matching query: " + phoneQuery);
+        return users;
+    }
+
     public void updateUser(User user) throws SQLException {
         try (Connection conn = dbHelper.getConnection()) {
-            String sql = "UPDATE users SET name = ?, image_url = ?, status = ? WHERE uid = ?";
+            String sql = "UPDATE users SET username = ?, profile_image_url = ?, status = ? WHERE user_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, user.getName());
                 stmt.setString(2, user.getImageUrl());
@@ -47,9 +89,10 @@ public class UserRepository {
         }
     }
 
+
     public void updateUserStatus(String userId, String status) throws SQLException {
         try (Connection conn = dbHelper.getConnection()) {
-            String sql = "UPDATE users SET status = ? WHERE uid = ?";
+            String sql = "UPDATE users SET status = ? WHERE user_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, status);
                 stmt.setString(2, userId);

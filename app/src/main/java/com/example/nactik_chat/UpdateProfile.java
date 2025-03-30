@@ -135,7 +135,7 @@ public class UpdateProfile extends AppCompatActivity {
                 String imageUrl = imagepath != null ?
                         uploadImage(userId, imagepath) : currentImageUrl;
 
-                User updatedUser = new User(userId, newname, imageUrl, "Online");
+                User updatedUser = new User(userId, newname, imageUrl, "Online", sessionManager.getUserphone());
                 userRepository.updateUser(updatedUser);
 
                 runOnUiThread(() -> {

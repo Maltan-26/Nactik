@@ -41,4 +41,9 @@ public class SessionManager {
         Log.d("SessionManager", "getUserId called, returning: " + userId);
         return userId;
     }
+    public String getUserphone() {
+        String userphone = pref.getString(KEY_PHONE, null);
+        Log.d("SessionManager", "getUserId called, returning: " + userphone);
+        return userphone;
+    }
 }

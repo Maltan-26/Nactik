@@ -54,11 +54,18 @@
             android:name=".UpdateProfile"
             android:exported="false"/>
 
+        <activity
+            android:name=".NewChatActivity"
+            android:exported="false"
+            android:parentActivityName=".chatActivity"/>
+
         <!-- Specific Chat Activity -->
         <activity
             android:name=".specificchat"
             android:exported="false"
             android:parentActivityName=".chatActivity" />
+
+
 
 
 

@@ -6,11 +6,17 @@ public class User {
     private String imageUrl;
     private String status;
 
-    public User(String uid, String name, String imageUrl, String status) {
+    private String phonenumber;
+
+    public User(String uid, String name, String imageUrl, String status, String phonenumber) {
         this.uid = uid;
+        this.phonenumber = phonenumber;
         this.name = name;
         this.imageUrl = imageUrl;
         this.status = status;
+    }
+    public String getPhone() {
+        return this.phonenumber;
     }
 
     public String getName() {
