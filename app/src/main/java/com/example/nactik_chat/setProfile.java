@@ -122,7 +122,7 @@ public class setProfile extends AppCompatActivity {
                 // Add this block to create login session
                 String phoneNumber = getIntent().getStringExtra("phoneNumber");
                 SessionManager sessionManager = new SessionManager(this);
-                String userId = getUserIdFromDatabase(phoneNumber); // You need to implement this method
+                Long userId = getUserIdFromDatabase(phoneNumber); // You need to implement this method
                 sessionManager.createLoginSession(userId, phoneNumber);
 
                 runOnUiThread(() -> {
@@ -145,14 +145,14 @@ public class setProfile extends AppCompatActivity {
     }
 
     // Add this method to get the user ID from the database
-    private String getUserIdFromDatabase(String phoneNumber) {
-        try (Connection conn = dbHelper.getConnection()) {
+    private Long getUserIdFromDatabase(String phoneNumber) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             String sql = "SELECT user_id FROM users WHERE phone_number = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, phoneNumber);
                 var rs = stmt.executeQuery();
                 if (rs.next()) {
-                    return rs.getString("user_id");
+                    return rs.getLong("user_id");
                 }
             }
         } catch (SQLException e) {
@@ -181,7 +181,7 @@ public class setProfile extends AppCompatActivity {
     }
 
     private boolean saveUserData(String imagePath) {
-        try (Connection conn = dbHelper.getConnection()) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             String sql = "INSERT INTO users ( username, profile_image_url, status, created_at, phone_number, last_active) " +
                     "VALUES (?, ?, ?, ?, ?, ?)";
 

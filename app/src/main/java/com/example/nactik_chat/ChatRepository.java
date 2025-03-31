@@ -12,9 +12,14 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -23,14 +28,15 @@ public class ChatRepository {
     private static final int MESSAGE_FETCH_LIMIT = 50;
     private final ExecutorService executorService;
 
+
     public ChatRepository() {
         this.executorService = Executors.newFixedThreadPool(4);
         dbHelper = DatabaseHelper.getInstance();
     }
 
-    public String createChatRoom(String user1Id, String user2Id) {
+    public String createChatRoom(Long user1Id, Long user2Id) {
         String roomId = generateRoomId(user1Id, user2Id);
-        try (Connection conn = dbHelper.getConnection()) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             // Start transaction
             conn.setAutoCommit(false);
             try {
@@ -46,12 +52,12 @@ public class ChatRepository {
 
                 // Add first participant
                 stmt2.setString(1, roomId);
-                stmt2.setString(2, user1Id);
+                stmt2.setLong(2, user1Id);
                 stmt2.executeUpdate();
 
                 // Add second participant
                 stmt2.setString(1, roomId);
-                stmt2.setString(2, user2Id);
+                stmt2.setLong(2, user2Id);
                 stmt2.executeUpdate();
 
                 conn.commit();
@@ -65,111 +71,76 @@ public class ChatRepository {
             return null;
         }
     }
-    public String generateRoomId(String user1Id, String user2Id) {
+    public String generateRoomId(Long user1Id, Long user2Id) {
         // Sort IDs to ensure consistent room ID regardless of order
-        String[] ids = {user1Id, user2Id};
+        String[] ids = {String.valueOf(user1Id), String.valueOf(user2Id)};
         Arrays.sort(ids);
-        return String.format("%s_%s", ids[0], ids[1]);
+        // Use string concatenation instead of String.format
+        return ids[0] + "_" + ids[1];
     }
-    public void sendMessage(String senderRoom, String senderUid, String message, long timestamp, String timeString) {
-        try (Connection conn = dbHelper.getConnection()) {
-            // Start transaction
-            conn.setAutoCommit(false);
-
-            try {
-                // Insert message
-                String sql = "INSERT INTO messages (room_id, sender_uid, message_text, timestamp, time_string) " +
-                        "VALUES (?, ?, ?, ?, ?)";
-
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                stmt.setString(1, senderRoom);
-                stmt.setString(2, senderUid);
-                stmt.setString(3, message);
-                stmt.setLong(4, timestamp);
-                stmt.setString(5, timeString);
-                stmt.executeUpdate();
-
-                // Update last message in chat room
-                String updateSql = "UPDATE chat_rooms SET last_message = ?, last_message_time = ? " +
-                        "WHERE room_id = ?";
-
-                PreparedStatement updateStmt = conn.prepareStatement(updateSql);
-                updateStmt.setString(1, message);
-                updateStmt.setLong(2, timestamp);
-                updateStmt.setString(3, senderRoom);
-                updateStmt.executeUpdate();
-
-                // Commit transaction
-                conn.commit();
-
-                Log.d("ChatRepository", "Message sent successfully at ");
-
-            } catch (SQLException e) {
-                // Rollback transaction on error
-                conn.rollback();
-                Log.e("ChatRepository", "Failed to send message: " + e.getMessage());
-                throw e;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-    public List<Message> getMessages(String roomId) {
-        List<Message> messages = new ArrayList<>();
-
-        try (Connection conn = dbHelper.getConnection()) {
-            String sql = "SELECT m.*, u.username as sender_name " +
-                    "FROM messages m " +
-                    "LEFT JOIN users u ON m.sender_uid = u.user_id " +
-                    "WHERE m.room_id = ? " +
-                    "ORDER BY m.timestamp DESC " +
-                    "LIMIT ?";
-
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, roomId);
-                stmt.setInt(2, MESSAGE_FETCH_LIMIT);
-
-                ResultSet rs = stmt.executeQuery();
-                while (rs.next()) {
-                    Message message = new Message(
-                            rs.getString("message_text"),
-                            rs.getString("sender_uid"),
-                            rs.getLong("timestamp"),
-                            rs.getString("time_string")
-                    );
-                    // Set additional properties if needed
-
-                }
-            }
-
-            Log.d(TAG, "Retrieved " + messages.size() + " messages for room " +
-                    roomId + " at " );
-
-        } catch (SQLException e) {
-            Log.e(TAG, "Error getting messages: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        return messages;
-    }
-    private Connection getConnection() throws SQLException {
+    public static String getCurrentUTCTime() {
         try {
-            Class.forName("org.postgresql.Driver");
-            return DriverManager.getConnection(
-                    DatabaseConfig.DB_URL,
-                    DatabaseConfig.DB_USER,
-                    DatabaseConfig.DB_PASSWORD
-            );
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("PostgreSQL JDBC driver not found", e);
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return dateFormat.format(new Date());
+        } catch (Exception e) {
+            Log.e(TAG, "Error generating UTC timestamp: " + e.getMessage());
+            return "";
+        }
+    }
+    public long saveMessage(Message message) throws SQLException {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseHelper.getInstance().getConnection();
+
+            String sql = "INSERT INTO messages (room_id, sender_uid, message_text, " +
+                    "timestamp, time_string, message_type, media_url) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+            stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            stmt.setString(1, message.getRoomId());
+            stmt.setLong(2, message.getSenderUid());
+            stmt.setString(3, message.getMessageText());
+            stmt.setLong(4, System.currentTimeMillis());
+            stmt.setString(5, getCurrentUTCTime());
+            stmt.setString(6, message.getMessageType());
+            stmt.setString(7, message.getMediaUrl());
+
+            int affectedRows = stmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Creating message failed, no rows affected.");
+            }
+
+            rs = stmt.getGeneratedKeys();
+            if (rs.next()) {
+                long messageId = rs.getLong(1);
+
+                return messageId;
+            } else {
+                throw new SQLException("Creating message failed, no ID obtained.");
+            }
+
+        } catch (SQLException e) {
+            Log.e(TAG, "Error saving message: " + e.getMessage());
+            throw e;
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException e) { /* ignored */ }
+            if (stmt != null) try { stmt.close(); } catch (SQLException e) { /* ignored */ }
+            if (conn != null) try { conn.close(); } catch (SQLException e) { /* ignored */ }
         }
     }
 
-    public void createChatRoomAsync(String user1Id, String user2Id, ChatCallback<String> callback) {
+
+
+    public void createChatRoomAsync(Long user1Id, Long user2Id, ChatCallback<String> callback) {
         executorService.execute(() -> {
             try {
                 String roomId = generateRoomId(user1Id, user2Id);
-                try (Connection conn = getConnection()) {
+                try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
                     conn.setAutoCommit(false);
                     try {
                         // Create chat room
@@ -183,11 +154,11 @@ public class ChatRepository {
                         String sql2 = "INSERT INTO room_participants (room_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING";
                         try (PreparedStatement stmt = conn.prepareStatement(sql2)) {
                             stmt.setString(1, roomId);
-                            stmt.setString(2, user1Id);
+                            stmt.setLong(2, user1Id);
                             stmt.executeUpdate();
 
                             stmt.setString(1, roomId);
-                            stmt.setString(2, user2Id);
+                            stmt.setLong(2, user2Id);
                             stmt.executeUpdate();
                         }
 
@@ -204,10 +175,10 @@ public class ChatRepository {
         });
     }
 
-    public void sendMessageAsync(String roomId, String senderId, String message,
+    public void sendMessageAsync(String roomId, long senderId, String message,
                                  long timestamp, String timeString, ChatCallback<Void> callback) {
         executorService.execute(() -> {
-            try (Connection conn = getConnection()) {
+            try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
                 conn.setAutoCommit(false);
                 try {
                     // Insert message
@@ -215,7 +186,7 @@ public class ChatRepository {
                             "VALUES (?, ?, ?, ?, ?)";
                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                         stmt.setString(1, roomId);
-                        stmt.setString(2, senderId);
+                        stmt.setLong(2, senderId);
                         stmt.setString(3, message);
                         stmt.setLong(4, timestamp);
                         stmt.setString(5, timeString);
@@ -248,8 +219,8 @@ public class ChatRepository {
         executorService.execute(() -> {
             try {
                 List<Message> messages = new ArrayList<>();
-                try (Connection conn = getConnection()) {
-                    String sql = "SELECT m.*, u.username as sender_name " +
+                try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
+                    String sql = "SELECT m.*, u.username as sender_name, u.profile_image_url " +
                             "FROM messages m " +
                             "LEFT JOIN users u ON m.sender_uid = u.user_id " +
                             "WHERE m.room_id = ? " +
@@ -260,21 +231,48 @@ public class ChatRepository {
                         stmt.setString(1, roomId);
                         stmt.setInt(2, MESSAGE_FETCH_LIMIT);
 
+                        Log.d(TAG, String.format("Fetching messages for room %s at %s",
+                                roomId, "2025-03-30 16:03:28"));
+
                         try (ResultSet rs = stmt.executeQuery()) {
                             while (rs.next()) {
                                 Message message = new Message(
+                                        rs.getLong("message_id"),
+                                        rs.getString("room_id"),
+                                        rs.getLong("sender_uid"),
                                         rs.getString("message_text"),
-                                        rs.getString("sender_uid"),
                                         rs.getLong("timestamp"),
-                                        rs.getString("time_string")
+                                        rs.getString("time_string"),
+                                        rs.getBoolean("is_read"),
+                                        rs.getBoolean("is_delivered"),
+                                        rs.getString("message_type"),
+                                        rs.getString("media_url")
                                 );
+
+                                // Set additional user information
+                                message.setSenderName(rs.getString("sender_name"));
+                                message.setSenderProfileImage(rs.getString("profile_image_url"));
+
                                 messages.add(message);
                             }
                         }
                     }
                 }
-                new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess(messages));
+
+                // Log success
+                Log.d(TAG, String.format("Successfully fetched %d messages for room %s - User: %s",
+                        messages.size(), roomId, "Maltan-26"));
+
+                // Return results on main thread
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (messages.isEmpty()) {
+                        Log.i(TAG, "No messages found for room " + roomId);
+                    }
+                    callback.onSuccess(messages);
+                });
+
             } catch (Exception e) {
+                Log.e(TAG, "Error fetching messages: " + e.getMessage());
                 new Handler(Looper.getMainLooper()).post(() -> callback.onError(e));
             }
         });
@@ -284,28 +282,67 @@ public class ChatRepository {
         executorService.shutdown();
     }
 
-    public List<Message> getRecentMessages(String roomId, long lastMessageTimestamp) {
+    public List<Message> getRecentMessages(String roomId, long lastMessageId) {
         List<Message> messages = new ArrayList<>();
-        try (Connection conn = dbHelper.getConnection()) {
-            String sql = "SELECT * FROM messages WHERE room_id = ? AND timestamp > ? " +
-                    "ORDER BY timestamp DESC LIMIT ?";
-            PreparedStatement stmt = conn.prepareStatement(sql);
+        String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 06:46:59
+
+        Connection connection = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        try {
+            connection = DatabaseHelper.getInstance().getConnection();
+            if (connection == null) {
+                throw new SQLException("Database connection is null");
+            }
+
+            String query = "SELECT m.*, u.username FROM messages m " +
+                    "JOIN users u ON m.user_id = u.id " +
+                    "WHERE m.room_id = ? AND m.message_id > ? " +
+                    "ORDER BY m.timestamp DESC LIMIT 50";
+
+            stmt = connection.prepareStatement(query);
             stmt.setString(1, roomId);
-            stmt.setLong(2, lastMessageTimestamp);
-            stmt.setInt(3, MESSAGE_FETCH_LIMIT);
-            ResultSet rs = stmt.executeQuery();
+            stmt.setLong(2, lastMessageId);
+
+            Log.d(TAG, String.format("Executing query at %s for room: %s", currentTime, roomId));
+            rs = stmt.executeQuery();
 
             while (rs.next()) {
-                messages.add(new Message(
+                Message message = new Message(
+                        rs.getLong("message_id"),
+                        rs.getString("room_id"),
+                        rs.getLong("sender_uid"),
                         rs.getString("message_text"),
-                        rs.getString("sender_uid"),
                         rs.getLong("timestamp"),
-                        rs.getString("time_string")
-                ));
+                        rs.getString("time_string"),
+                        rs.getBoolean("is_read"),
+                        rs.getBoolean("is_delivered"),
+                        rs.getString("message_type"),
+                        rs.getString("media_url")
+                );
+                messages.add(message);
             }
+
+            Log.d(TAG, String.format("Retrieved %d messages at %s", messages.size(), currentTime));
+            return messages;
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            String errorMsg = String.format("Database error at %s: %s", currentTime, e.getMessage());
+            Log.e(TAG, errorMsg);
+            throw new RuntimeException(errorMsg);
+        } finally {
+            closeResources(connection, stmt, rs);
         }
-        return messages;
+    }
+
+    private void closeResources(Connection conn, PreparedStatement stmt, ResultSet rs) {
+        try {
+            if (rs != null) rs.close();
+            if (stmt != null) stmt.close();
+            if (conn != null) conn.close();
+        } catch (SQLException e) {
+            Log.e(TAG, "Error closing resources: " + e.getMessage());
+        }
     }
 }

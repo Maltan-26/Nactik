@@ -67,7 +67,7 @@ public class OtpService {
 
     // Optional: Add method to track SMS sending attempts
     private void recordSmsAttempt(String phoneNumber, boolean success) {
-        try (Connection conn = dbHelper.getConnection()) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             String sql = "INSERT INTO sms_attempts (phone_number, success, attempt_time) VALUES (?, ?, ?)";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, phoneNumber);
@@ -95,7 +95,7 @@ public class OtpService {
     }
 
     private void saveOtp(String phoneNumber, String otp) {
-        try (Connection conn = dbHelper.getConnection()) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             // First delete any existing OTP for this phone number
             String deleteSql = "DELETE FROM otp_verification WHERE phone_number = ?";
             try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSql)) {
@@ -118,7 +118,7 @@ public class OtpService {
     }
 
     public boolean verifyOtp(String phoneNumber, String submittedOtp) {
-        try (Connection conn = dbHelper.getConnection()) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             String sql = "SELECT otp, created_at FROM otp_verification WHERE phone_number = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, phoneNumber);
@@ -158,7 +158,7 @@ public class OtpService {
     }
 
     private void deleteOtp(String phoneNumber) {
-        try (Connection conn = dbHelper.getConnection()) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             String sql = "DELETE FROM otp_verification WHERE phone_number = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, phoneNumber);

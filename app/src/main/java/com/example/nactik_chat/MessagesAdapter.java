@@ -18,9 +18,9 @@ public class MessagesAdapter extends RecyclerView.Adapter {
 
     private Context context;
     private List<Message> messages;
-    private String currentUserId;
+    private Long currentUserId;
 
-    public MessagesAdapter(Context context, String currentUserId) {
+    public MessagesAdapter(Context context, long currentUserId) {
         this.context = context;
         this.currentUserId = currentUserId;
         this.messages = new ArrayList<>();
@@ -36,7 +36,7 @@ public class MessagesAdapter extends RecyclerView.Adapter {
 
 
     // Alternative constructor if you need to specify currentUserId
-    public MessagesAdapter(Context context, ArrayList<Message> messages, String currentUserId) {
+    public MessagesAdapter(Context context, ArrayList<Message> messages, long currentUserId) {
         this.context = context;
         this.messages = messages;
         this.currentUserId = currentUserId;
@@ -80,7 +80,7 @@ public class MessagesAdapter extends RecyclerView.Adapter {
     @Override
     public int getItemViewType(int position) {
         Message message = messages.get(position);
-        return currentUserId.equals(message.getSenderId()) ? ITEM_SEND : ITEM_RECEIVE;
+        return currentUserId.equals(message.getSenderUid()) ? ITEM_SEND : ITEM_RECEIVE;
     }
 
     @Override
@@ -99,8 +99,8 @@ public class MessagesAdapter extends RecyclerView.Adapter {
         }
 
         void bind(Message message) {
-            messageText.setText(message.getMessage());
-            messageTime.setText(message.getCurrenttime());
+            messageText.setText(message.getMessageText());
+            messageTime.setText(message.getTimeString());
         }
     }
 
@@ -115,8 +115,8 @@ public class MessagesAdapter extends RecyclerView.Adapter {
         }
 
         void bind(Message message) {
-            messageText.setText(message.getMessage());
-            messageTime.setText(message.getCurrenttime());
+            messageText.setText(message.getMessageText());
+            messageTime.setText(message.getTimeString());
         }
     }
 }

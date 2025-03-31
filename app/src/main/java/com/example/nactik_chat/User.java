@@ -1,14 +1,14 @@
 package com.example.nactik_chat;
 
 public class User {
-    private String uid;
+    private long uid;
     private String name;
     private String imageUrl;
     private String status;
 
     private String phonenumber;
 
-    public User(String uid, String name, String imageUrl, String status, String phonenumber) {
+    public User(long uid, String name, String imageUrl, String status, String phonenumber) {
         this.uid = uid;
         this.phonenumber = phonenumber;
         this.name = name;
@@ -31,7 +31,7 @@ public class User {
         return this.status;
     }
 
-    public String getUid() {
+    public long getUid() {
         return this.uid;
     }
 

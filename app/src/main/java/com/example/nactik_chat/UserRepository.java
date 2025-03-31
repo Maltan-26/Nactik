@@ -18,15 +18,15 @@ public class UserRepository {
         this.dbHelper = DatabaseHelper.getInstance();
     }
 
-    public User getUserById(String userId) throws SQLException {
-        try (Connection conn = dbHelper.getConnection()) {
+    public User getUserById(long userId) throws SQLException {
+        try (Connection conn =DatabaseHelper.getInstance().getConnection()) {
             String sql = "SELECT * FROM users WHERE user_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, userId);
+                stmt.setLong(1, userId);
                 ResultSet rs = stmt.executeQuery();
                 if (rs.next()) {
                     return new User(
-                            rs.getString("user_id"),
+                            rs.getLong("user_id"),
                             rs.getString("username"),
                             rs.getString("profile_image_url"),
                             rs.getString("status"),
@@ -41,7 +41,7 @@ public class UserRepository {
     public List<User> searchUsersByPhone(String phoneQuery) throws SQLException {
         List<User> users = new ArrayList<>();
 
-        try (Connection conn = dbHelper.getConnection()) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             // Using LIKE for partial phone number matching
             String sql = "SELECT * FROM users WHERE phone_number LIKE ? " +  // Exclude current user
                     "ORDER BY username ASC " +
@@ -55,7 +55,7 @@ public class UserRepository {
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
                     User user = new User(
-                            rs.getString("user_id"),
+                            rs.getLong("user_id"),
                             rs.getString("username"),
                             rs.getString("profile_image_url"),
                             rs.getString("status"),
@@ -74,13 +74,13 @@ public class UserRepository {
     }
 
     public void updateUser(User user) throws SQLException {
-        try (Connection conn = dbHelper.getConnection()) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             String sql = "UPDATE users SET username = ?, profile_image_url = ?, status = ? WHERE user_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, user.getName());
                 stmt.setString(2, user.getImageUrl());
                 stmt.setString(3, user.getStatus());
-                stmt.setString(4, user.getUid());
+                stmt.setLong(4, user.getUid());
                 int updated = stmt.executeUpdate();
                 if (updated == 0) {
                     throw new SQLException("User update failed");
@@ -90,12 +90,12 @@ public class UserRepository {
     }
 
 
-    public void updateUserStatus(String userId, String status) throws SQLException {
-        try (Connection conn = dbHelper.getConnection()) {
+    public void updateUserStatus(long userId, String status) throws SQLException {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             String sql = "UPDATE users SET status = ? WHERE user_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, status);
-                stmt.setString(2, userId);
+                stmt.setLong(2, userId);
                 stmt.executeUpdate();
             }
         }

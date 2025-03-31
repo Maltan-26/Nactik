@@ -40,53 +40,88 @@ public class chatActivity extends AppCompatActivity {
     private SessionManager sessionManager;
 
     // State
-    private String currentUserId;
+    private Long currentUserId;
     private String currentRoomId;
+    private static final String TAG = "chatActivity";
+    private static final String CURRENT_USER = "Maltan-26";
+    private static final long TOAST_DELAY = 5000; // 5 seconds
+    private long lastToastTime = 0;
+    private MessagesAdapter messagesAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
+        String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 08:19:05
+        Log.d(TAG, String.format("Creating chatActivity at %s for user %s",
+                currentTime, CURRENT_USER));
+
         initializeDependencies();
         initializeViews();
         setupToolbar();
         setupViewPager();
-        setupMessagePolling();
-    }
 
-    private void initializeDependencies() {
-        userRepository = new UserRepository();
-        chatRepository = new ChatRepository();
-        messageRepository = new MessageRepository();
-        sessionManager = new SessionManager(this);
-        pollingService = new MessagePollingService(messageRepository);
-
-        // Add debug logging
-        boolean isLoggedIn = sessionManager.isLoggedIn();
-        currentUserId = sessionManager.getUserId();
-        Log.d("chatActivity", "isLoggedIn: " + isLoggedIn + ", currentUserId: " + currentUserId);
-
-        if (currentUserId == null) {
-            // Handle not logged in state
-            navigateToLogin();
-            return;
+        // Get room ID from intent
+        currentRoomId = getIntent().getStringExtra("room_id");
+        if (currentRoomId != null && !currentRoomId.trim().isEmpty()) {
+            setupMessagePolling(currentRoomId);
+        } else {
+            Log.w(TAG, String.format("No room ID provided at %s", currentTime));
         }
     }
 
-    private void initializeViews() {
-        tabLayout = findViewById(R.id.include);
-        mchat = findViewById(R.id.chat);
-        mcall = findViewById(R.id.calls);
-        mstatus = findViewById(R.id.status);
-        viewPager = findViewById(R.id.fragmentcontainer);
-        mtoolbar = findViewById(R.id.toolbar);
-        recyclerView = findViewById(R.id.chat_recycler_view);
+    private void initializeDependencies() {
+        String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 08:19:05
 
-        // Setup RecyclerView
-        MessagesAdapter adapter = new MessagesAdapter(this, currentUserId);
-        recyclerView.setAdapter(adapter);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        try {
+            userRepository = new UserRepository();
+            chatRepository = new ChatRepository();
+            messageRepository = new MessageRepository();
+            sessionManager = new SessionManager(this);
+            pollingService = new MessagePollingService(messageRepository);
+
+            boolean isLoggedIn = sessionManager.isLoggedIn();
+            currentUserId = sessionManager.getUserId();
+
+            Log.d(TAG, String.format("Dependencies initialized at %s - isLoggedIn: %b, userId: %d",
+                    currentTime, isLoggedIn, currentUserId));
+
+            if (currentUserId == null) {
+                Log.w(TAG, String.format("No user ID found at %s, redirecting to login",
+                        currentTime));
+                navigateToLogin();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, String.format("Error initializing dependencies at %s: %s",
+                    currentTime, e.getMessage()));
+            finish();
+        }
+    }
+
+
+    private void initializeViews() {
+        String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 08:19:05
+
+        try {
+            tabLayout = findViewById(R.id.include);
+            mchat = findViewById(R.id.chat);
+            mcall = findViewById(R.id.calls);
+            mstatus = findViewById(R.id.status);
+            viewPager = findViewById(R.id.fragmentcontainer);
+            mtoolbar = findViewById(R.id.toolbar);
+            recyclerView = findViewById(R.id.chat_recycler_view);
+
+            // Setup RecyclerView
+            messagesAdapter = new MessagesAdapter(this, currentUserId);
+            recyclerView.setAdapter(messagesAdapter);
+            recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+            Log.d(TAG, String.format("Views initialized at %s", currentTime));
+        } catch (Exception e) {
+            Log.e(TAG, String.format("Error initializing views at %s: %s",
+                    currentTime, e.getMessage()));
+        }
     }
 
     private void setupToolbar() {
@@ -126,24 +161,61 @@ public class chatActivity extends AppCompatActivity {
         });
     }
 
-    private void setupMessagePolling() {
-        pollingService.startPolling(currentRoomId, System.currentTimeMillis(),
-                new MessagePollingService.MessageCallback() {
-                    @Override
-                    public void onNewMessages(List<Message> messages) {
-                        if (recyclerView.getAdapter() instanceof MessagesAdapter) {
-                            ((MessagesAdapter) recyclerView.getAdapter()).setMessages(messages);
-                        }
-                    }
+    private void setupMessagePolling(String roomId) {
+        String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 08:19:05
 
-                    @Override
-                    public void onError(String error) {
-                        Toast.makeText(chatActivity.this,
-                                "Error: " + error, Toast.LENGTH_SHORT).show();
-                    }
-                });
+        if (roomId == null || roomId.trim().isEmpty()) {
+            Log.e(TAG, String.format("Invalid room ID provided at %s", currentTime));
+            return;
+        }
+
+        try {
+            Log.d(TAG, String.format("Starting message polling at %s for room: %s",
+                    currentTime, roomId));
+
+            pollingService.startPolling(roomId, System.currentTimeMillis(),
+                    new MessagePollingService.MessageCallback() {
+                        @Override
+                        public void onNewMessages(List<Message> messages) {
+                            runOnUiThread(() -> updateMessages(messages));
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            runOnUiThread(() -> showError(error));
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, String.format("Error setting up polling at %s: %s",
+                    currentTime, e.getMessage()));
+        }
+    }
+    private void updateMessages(List<Message> messages) {
+        String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 08:19:05
+
+        try {
+            if (messages != null && !messages.isEmpty()) {
+                messagesAdapter.setMessages(messages);
+                recyclerView.scrollToPosition(messages.size() - 1);
+                Log.d(TAG, String.format("Updated %d messages at %s",
+                        messages.size(), currentTime));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, String.format("Error updating messages at %s: %s",
+                    currentTime, e.getMessage()));
+            showError("Failed to update messages");
+        }
     }
 
+    private void showError(String error) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastToastTime > TOAST_DELAY) {
+            Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
+            lastToastTime = currentTime;
+            Log.e(TAG, String.format("Showing error at %s: %s",
+                    TimeUtils.getCurrentUTCTime(), error));
+        }
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater menuInflater = getMenuInflater();
@@ -199,9 +271,12 @@ public class chatActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 08:19:05
+        Log.d(TAG, String.format("Destroying chatActivity at %s", currentTime));
+
         if (pollingService != null) {
             pollingService.stopPolling();
         }
+        super.onDestroy();
     }
 }

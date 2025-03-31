@@ -17,15 +17,15 @@ public class ImageRepository {
         this.dbHelper = DatabaseHelper.getInstance();
     }
 
-    public String uploadImage(String userId, byte[] imageData) throws IOException {
+    public String uploadImage(Long userId, byte[] imageData) throws IOException {
         String fileName = userId + "_" + System.currentTimeMillis() + ".jpg";
         String imageUrl = uploadToServer(fileName, imageData);
 
-        try (Connection conn = dbHelper.getConnection()) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             String sql = "UPDATE users SET image_url = ? WHERE uid = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, imageUrl);
-                stmt.setString(2, userId);
+                stmt.setLong(2, userId);
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {

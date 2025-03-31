@@ -20,7 +20,6 @@ import java.util.List;
 
 public class chatFragment extends Fragment {
     private static final String TAG = "chatFragment";
-    private static final String CURRENT_TIME = "2025-03-30 10:15:28";
     private static final String CURRENT_USER = "Maltan-26";
 
     // Views
@@ -67,55 +66,78 @@ public class chatFragment extends Fragment {
         // LinearLayoutManager is already set in XML using app:layoutManager
     }
 
-    private void setupListeners() {
-        // Setup pull to refresh
-        swipeRefreshLayout.setOnRefreshListener(() -> {
-            loadChats();
-            Log.d(TAG, "Refreshing chats at " + CURRENT_TIME);
-        });
-
-        // Setup FAB click listener
-        fabNewChat.setOnClickListener(v -> {
-            startNewChat();
-            Log.d(TAG, "New chat button clicked by " + CURRENT_USER);
-        });
-    }
-
     private void loadChats() {
+        String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 06:46:59
+        Log.d(TAG, String.format("Loading chats at %s for user: %s", currentTime, CURRENT_USER));
+
         showLoadingState();
 
-        try {
-            // Load chats in background
-            new Thread(() -> {
-                try {
-                    List<Message> chats = chatRepository.getRecentMessages("defaultRoom", 0);
+        new Thread(() -> {
+            try {
+                // Get chats from repository
+                List<Message> chats = chatRepository.getRecentMessages("defaultRoom", 0);
 
-                    // Update UI on main thread
-                    if (getActivity() != null) {
-                        getActivity().runOnUiThread(() -> updateUIWithChats(chats));
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "Error loading chats: " + e.getMessage());
-                    showError("Failed to load chats");
+                // Update UI on main thread
+                if (isAdded() && getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        try {
+                            updateUIWithChats(chats);
+                        } catch (Exception e) {
+                            String errorMsg = String.format("Error updating UI at %s: %s",
+                                    TimeUtils.getCurrentUTCTime(), e.getMessage());
+                            Log.e(TAG, errorMsg);
+                            showError("Failed to update chats");
+                        }
+                    });
                 }
-            }).start();
-        } catch (Exception e) {
-            Log.e(TAG, "Error starting chat load: " + e.getMessage());
-            showError("Error starting chat load");
-        }
+            } catch (Exception e) {
+                String errorMsg = String.format("Error loading chats at %s: %s",
+                        TimeUtils.getCurrentUTCTime(), e.getMessage());
+                Log.e(TAG, errorMsg);
+
+                if (isAdded() && getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        showError("Failed to load chats");
+                        showEmptyState();
+                    });
+                }
+            }
+        }).start();
     }
 
     private void updateUIWithChats(List<Message> chats) {
-        hideLoadingState();
+        String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 06:46:59
 
-        if (chats != null && !chats.isEmpty()) {
-            chatAdapter.setMessages(chats);
-            showContentState();
-            Log.d(TAG, "Loaded " + chats.size() + " chats");
-        } else {
-            showEmptyState();
-            Log.d(TAG, "No chats found");
+        try {
+            hideLoadingState();
+
+            if (chats != null && !chats.isEmpty()) {
+                chatAdapter.setMessages(chats);
+                showContentState();
+                Log.d(TAG, String.format("Loaded %d chats at %s", chats.size(), currentTime));
+            } else {
+                showEmptyState();
+                Log.d(TAG, String.format("No chats found at %s for user %s",
+                        currentTime, CURRENT_USER));
+            }
+        } catch (Exception e) {
+            String errorMsg = String.format("Error updating UI with chats at %s: %s",
+                    currentTime, e.getMessage());
+            Log.e(TAG, errorMsg);
+            showError("Failed to display chats");
         }
+    }
+
+    private void setupListeners() {
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            loadChats();
+            Log.d(TAG, "Refreshing chats for user " + CURRENT_USER);
+        });
+
+        fabNewChat.setOnClickListener(v -> {
+            startNewChat();
+            Log.d(TAG, "New chat button clicked by user " + CURRENT_USER);
+        });
     }
 
     private void showLoadingState() {
@@ -162,7 +184,7 @@ public class chatFragment extends Fragment {
     public void onResume() {
         super.onResume();
         loadChats();
-        Log.d(TAG, "Chat fragment resumed by " + CURRENT_USER);
+        Log.d(TAG, "Chat fragment resumed by user " + CURRENT_USER);
     }
 
     @Override

@@ -95,7 +95,7 @@ public class UpdateProfile extends AppCompatActivity {
 
 
     private void loadCurrentUserData() {
-        String userId = sessionManager.getUserId();
+        Long userId = sessionManager.getUserId();
         new Thread(() -> {
             try {
                 User user = userRepository.getUserById(userId);
@@ -131,7 +131,7 @@ public class UpdateProfile extends AppCompatActivity {
         mprogressbarofupdateprofile.setVisibility(View.VISIBLE);
         new Thread(() -> {
             try {
-                String userId = sessionManager.getUserId();
+                Long userId = sessionManager.getUserId();
                 String imageUrl = imagepath != null ?
                         uploadImage(userId, imagepath) : currentImageUrl;
 
@@ -152,7 +152,7 @@ public class UpdateProfile extends AppCompatActivity {
         }).start();
     }
 
-    private String uploadImage(String userId, Uri imageUri) throws IOException {
+    private String uploadImage(long userId, Uri imageUri) throws IOException {
         // Compress image
         Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

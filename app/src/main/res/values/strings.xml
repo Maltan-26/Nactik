@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="message_input_hint">Type a message…</string>
     <string name="send_button_text">Send</string>
     <string name="back_button_description">Navigate back to previous screen</string>

@@ -14,7 +14,7 @@ public class AuthRepository {
     }
 
     public void saveOtpForPhone(String phoneNumber, String otp) throws SQLException {
-        try (Connection conn = dbHelper.getConnection()) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             String sql = "INSERT INTO otp_verification (phone_number, otp, expires_at) VALUES (?, ?, ?)";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 Timestamp expiryTime = new Timestamp(System.currentTimeMillis() + (OTP_EXPIRY_MINUTES * 60 * 1000));
@@ -27,7 +27,7 @@ public class AuthRepository {
     }
 
     public boolean verifyOtp(String phoneNumber, String otp) throws SQLException {
-        try (Connection conn = dbHelper.getConnection()) {
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
             String sql = "SELECT * FROM otp_verification WHERE phone_number = ? AND otp = ? AND expires_at > ? AND attempt_count = 0";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, phoneNumber);

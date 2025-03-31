@@ -1,96 +1,82 @@
 package com.example.nactik_chat;
-
 public class Message {
-    private static final String CURRENT_TIME = "2025-03-27 18:31:30";
-    private static final String CURRENT_USER = "Maltan-26";
-
-    private long id;
-    private String message;
-    private String senderId;
-    private long timestamp;
-    private String currenttime;
+    private long messageId;
     private String roomId;
+    private long  senderUid;
+    private String messageText;
+    private long timestamp;
+    private String timeString;
     private boolean isRead;
-    private String senderName; // Added for sender's display name
+    private boolean isDelivered;
+    private String messageType;
+    private String mediaUrl;
+    private String senderName;        // From users table
+    private String senderProfileImage; // From users table
 
-    public Message() {
-    }
-
-    public Message(String message, String senderId, long timestamp, String currenttime) {
-        this.message = message;
-        this.senderId = senderId;
+    public Message(long messageId, String roomId, long senderUid, String messageText,
+                   long timestamp, String timeString, boolean isRead, boolean isDelivered,
+                   String messageType, String mediaUrl) {
+        this.messageId = messageId;
+        this.roomId = roomId;
+        this.senderUid = senderUid;
+        this.messageText = messageText;
         this.timestamp = timestamp;
-        this.currenttime = currenttime;
+        this.timeString = timeString;
+        this.isRead = isRead;
+        this.isDelivered = isDelivered;
+        this.messageType = messageType;
+        this.mediaUrl = mediaUrl;
+    }
+    public Message(){
+
     }
 
-    // Add the missing methods needed by ChatAdapter
-    public String getMessageText() {
-        return getMessage(); // Uses existing getMessage()
-    }
+    // Getters
+    public long getMessageId() { return messageId; }
+    public String getRoomId() { return roomId; }
+    public long getSenderUid() { return senderUid; }
+    public String getMessageText() { return messageText; }
+    public long getTimestamp() { return timestamp; }
+    public String getTimeString() { return timeString; }
+    public boolean isRead() { return isRead; }
+    public boolean isDelivered() { return isDelivered; }
+    public String getMessageType() { return messageType; }
+    public String getMediaUrl() { return mediaUrl; }
+    public String getSenderName() { return senderName; }
+    public String getSenderProfileImage() { return senderProfileImage; }
 
-    public String getTimeString() {
-        return getCurrenttime(); // Uses existing getCurrenttime()
+    // Setters
+    public void setSenderName(String senderName) { this.senderName = senderName; }
+    public void setSenderProfileImage(String senderProfileImage) {
+        this.senderProfileImage = senderProfileImage;
     }
+    public void setRead(boolean read) { isRead = read; }
+    public void setDelivered(boolean delivered) { isDelivered = delivered; }
 
-    public String getSenderUid() {
-        return getSenderId(); // Uses existing getSenderId()
-    }
-
-    public String getSenderName() {
-        return senderName;
-    }
-
-    public void setSenderName(String senderName) {
-        this.senderName = senderName;
-    }
-
-    // Existing getters and setters
-    public long getId() {
-        return id;
+    @Override
+    public String toString() {
+        return "Message{" +
+                "messageId=" + messageId +
+                ", senderUid='" + senderUid + "'" +
+                ", messageText='" + messageText + "'" +
+                ", timeString='" + timeString + "'" +
+                "}";
     }
 
     public void setId(long id) {
-        this.id = id;
-    }
 
-    public String getRoomId() {
-        return roomId;
     }
 
     public void setRoomId(String roomId) {
         this.roomId = roomId;
     }
 
-    public boolean isRead() {
-        return isRead;
-    }
-
-    public void setRead(boolean read) {
-        isRead = read;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public String getSenderId() {
-        return senderId;
-    }
-
-    public String getCurrenttime() {
-        return currenttime;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setSenderId(String senderId) {
-        this.senderId = senderId;
+    public void setSenderId(long  senderId) {
+        this.senderUid = senderId;
     }
 
     public void setMessage(String messageText) {
-        this.message = messageText;
+        this.messageText = messageText;
     }
 
     public void setTimestamp(long timestamp) {
@@ -98,21 +84,18 @@ public class Message {
     }
 
     public void setCurrenttime(String timeString) {
-        this.currenttime = timeString;
+        this.timeString =timeString;
     }
 
-    // Add toString method for debugging
-    @Override
-    public String toString() {
-        return "Message{" +
-                "id=" + id +
-                ", message='" + message + '\'' +
-                ", senderId='" + senderId + '\'' +
-                ", senderName='" + senderName + '\'' +
-                ", timestamp=" + timestamp +
-                ", currenttime='" + currenttime + '\'' +
-                ", roomId='" + roomId + '\'' +
-                ", isRead=" + isRead +
-                '}';
+    public void setdelivered(boolean isDelivered) {
+        this.isDelivered= isDelivered;
+    }
+
+    public void settype(String messageType) {
+        this.messageType = messageType;
+    }
+
+    public void setmedia_url(String mediaUrl) {
+        this.mediaUrl = mediaUrl;
     }
 }

@@ -99,7 +99,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void loadUserProfile() {
         progressBar.setVisibility(View.VISIBLE);
         new Thread(() -> {
-            try (Connection conn = dbHelper.getConnection()) {
+            try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
                 String sql = "SELECT username, status, profile_image_url, last_updated " +
                         "FROM users WHERE user_id = ?";
 
@@ -161,7 +161,7 @@ public class ProfileActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
 
         new Thread(() -> {
-            try (Connection conn = dbHelper.getConnection()) {
+            try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
                 String sql = "UPDATE users SET username = ?, status = ?, " +
                         "profile_image_url = ?, last_updated = ? " +
                         "WHERE user_id = ?";

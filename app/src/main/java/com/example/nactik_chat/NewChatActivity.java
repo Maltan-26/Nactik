@@ -26,7 +26,8 @@ import java.util.concurrent.Executors;
 public class NewChatActivity extends AppCompatActivity {
     private static final String TAG = "NewChatActivity";
     private static final String CURRENT_TIME = "2025-03-30 10:26:00";
-    private static final String CURRENT_USER = "Maltan-26";
+
+    private static  Long CURRENT_USER ;
     private static final long SEARCH_DELAY_MS = 500;
 
     // Views
@@ -46,7 +47,8 @@ public class NewChatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_chat);
-
+        SessionManager sessionManager = new SessionManager(this);
+        CURRENT_USER = sessionManager.getUserId();
         initializeViews();
         setupToolbar();
         setupRecyclerView();
@@ -135,10 +137,11 @@ public class NewChatActivity extends AppCompatActivity {
 
     private void startSpecificChat(User user) {
         try {
-            Intent intent = new Intent(this, specificchat.class);
-            intent.putExtra("userId", user.getUid());
-            intent.putExtra("userName", user.getName());
-            intent.putExtra("userPhone", user.getPhone());
+            Intent intent = new Intent(NewChatActivity.this, specificchat.class);
+            intent.putExtra("userName", CURRENT_USER);
+            intent.putExtra("receivername", user.getName());
+            intent.putExtra("receiveruid", user.getUid());
+
             startActivity(intent);
             finish();
         } catch (Exception e) {

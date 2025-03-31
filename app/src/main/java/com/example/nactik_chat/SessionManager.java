@@ -20,9 +20,9 @@ public class SessionManager {
         editor = pref.edit();
     }
 
-    public void createLoginSession(String userId, String phone) {
+    public void createLoginSession(Long userId, String phone) {
         editor.putBoolean(KEY_IS_LOGGED_IN, true);
-        editor.putString(KEY_USER_ID, userId);
+        editor.putString(KEY_USER_ID, String.valueOf(userId));
         editor.putString(KEY_PHONE, phone);
         editor.commit();
     }
@@ -36,11 +36,12 @@ public class SessionManager {
         editor.commit();
     }
 
-    public String getUserId() {
-        String userId = pref.getString(KEY_USER_ID, null);
+    public long getUserId() {
+        Long userId = Long.parseLong(pref.getString(KEY_USER_ID, null));
         Log.d("SessionManager", "getUserId called, returning: " + userId);
         return userId;
     }
+
     public String getUserphone() {
         String userphone = pref.getString(KEY_PHONE, null);
         Log.d("SessionManager", "getUserId called, returning: " + userphone);

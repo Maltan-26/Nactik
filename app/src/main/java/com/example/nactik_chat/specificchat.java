@@ -1,6 +1,7 @@
 package com.example.nactik_chat;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -20,12 +21,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class specificchat extends AppCompatActivity {
     private static final String TAG = "specificchat";
     private String roomId;
     private static final String CURRENT_TIME = "2025-03-27 19:08:52";
-    private static  String CURRENT_USER;
+    private static  Long CURRENT_USER;
 
     // UI Components
     private MaterialCardView msendmessagecardview;
@@ -36,23 +38,41 @@ public class specificchat extends AppCompatActivity {
     private TextView userNameText;
     private ImageView userProfileImage;
     private Toolbar toolbar;
-
+    private static final long DEFAULT_USER_ID = 0L;
     // Data
     private MessagesAdapter messagesAdapter;
     private ArrayList<Message> messagesArrayList;
     private ChatRepository chatRepository;
-    private String receiverUserId;
+    private Long receiverUserId;
     private String receiverUserName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_specificchat);
+        try {
+            // Safe way to get and parse the user ID
+            String userIdStr = getIntent().getStringExtra("userName");
 
-        // Get current user first
-        CURRENT_USER = getIntent().getStringExtra("currentUser");
-        if (CURRENT_USER == null) {
-            CURRENT_USER = "Maltan-26"; // Default value
+            // Log the received value
+
+            if (userIdStr != null && !userIdStr.trim().isEmpty()) {
+                try {
+                    CURRENT_USER = Long.parseLong(userIdStr.trim());
+                    Log.d(TAG, "Successfully parsed userId: " + CURRENT_USER);
+                } catch (NumberFormatException e) {
+                    CURRENT_USER = DEFAULT_USER_ID;
+                    Log.e(TAG, "Error parsing userId: " + e.getMessage());
+                }
+            } else {
+                CURRENT_USER = DEFAULT_USER_ID;
+                Log.w(TAG, "No userName provided in intent");
+            }
+
+        } catch (Exception e) {
+            CURRENT_USER = DEFAULT_USER_ID;
+
+            Log.e(TAG, "erorror-------");
         }
 
         initializeViews();
@@ -88,40 +108,72 @@ public class specificchat extends AppCompatActivity {
             }
         });
     }
-
+    public static String getCurrentUTCTime() {
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return dateFormat.format(new Date());
+        } catch (Exception e) {
+            Log.e(TAG, "Error generating UTC timestamp: " + e.getMessage());
+            return "";
+        }
+    }
     private void sendMessage() {
         String messageText = messageInput.getText().toString().trim();
         if (!messageText.isEmpty()) {
             sendButton.setEnabled(false);
             long timestamp = System.currentTimeMillis();
-            String timeString = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-                    .format(new Date());
+            String timeString = getCurrentUTCTime(); // Using the TimeUtils class
 
-            Message pendingMessage = new Message(messageText, CURRENT_USER, timestamp, timeString);
+            // Create a pending message with all required fields
+            Message pendingMessage = new Message(
+                    0,                  // messageId (will be set by database)
+                    roomId,            // roomId
+                    CURRENT_USER,      // senderUid
+                    messageText,       // messageText
+                    timestamp,         // timestamp
+                    timeString,        // timeString
+                    false,            // isRead
+                    false,            // isDelivered
+                    "text",           // messageType
+                    null              // mediaUrl
+            );
+
+            // Add to UI immediately
             messagesArrayList.add(0, pendingMessage);
             messagesAdapter.notifyItemInserted(0);
             mrecyclerview.scrollToPosition(0);
-
-
             messageInput.setText("");
 
-            chatRepository.sendMessageAsync(roomId, CURRENT_USER, messageText, timestamp, timeString,
+            // Send to server
+            chatRepository.sendMessageAsync(
+                    roomId,
+                    CURRENT_USER,
+                    messageText,
+                    timestamp,
+                    timeString,
                     new ChatCallback<Void>() {
                         @Override
                         public void onSuccess(Void result) {
-                            sendButton.setEnabled(true);
-                            loadMessages();
+                            runOnUiThread(() -> {
+                                sendButton.setEnabled(true);
+                                loadMessages(); // Refresh messages to get server-generated ID
+                            });
                         }
 
                         @Override
                         public void onError(Exception e) {
-                            sendButton.setEnabled(true);
-                            messagesArrayList.remove(pendingMessage);
-                            messagesAdapter.notifyDataSetChanged();
-                            Toast.makeText(specificchat.this, "Failed to send message: " + e.getMessage(),
-                                    Toast.LENGTH_SHORT).show();
+                            runOnUiThread(() -> {
+                                sendButton.setEnabled(true);
+                                messagesArrayList.remove(pendingMessage);
+                                messagesAdapter.notifyDataSetChanged();
+                                Toast.makeText(specificchat.this,
+                                        "Failed to send message: " + e.getMessage(),
+                                        Toast.LENGTH_SHORT).show();
+                            });
                         }
-                    });
+                    }
+            );
         }
     }
 
@@ -159,8 +211,20 @@ public class specificchat extends AppCompatActivity {
         messagesArrayList = new ArrayList<>();
 
         // Get intent extras
-        receiverUserId = getIntent().getStringExtra("receiveruid");
-        receiverUserName = getIntent().getStringExtra("name");
+        String userIdStr = getIntent().getStringExtra("receiveruid");
+        if (userIdStr != null && !userIdStr.trim().isEmpty()) {
+            try {
+                receiverUserId = Long.parseLong(userIdStr.trim());
+                Log.d(TAG, "Successfully parsed userId: " + receiverUserId);
+            } catch (NumberFormatException e) {
+                receiverUserId = DEFAULT_USER_ID;
+                Log.e(TAG, "Error parsing userId: " + e.getMessage());
+            }
+        } else {
+            receiverUserId = DEFAULT_USER_ID;
+            Log.w(TAG, "No userName provided in intent");
+        }
+        receiverUserName = getIntent().getStringExtra("receivername");
     }
 
     private void setupToolbar() {
@@ -190,7 +254,7 @@ public class specificchat extends AppCompatActivity {
             chatRepository.shutdown();
         }
     }
-    public String getCurrentUser() {
+    public long getCurrentUser() {
         return CURRENT_USER;
     }
 
