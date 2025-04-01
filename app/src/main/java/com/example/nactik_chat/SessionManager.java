@@ -37,7 +37,8 @@ public class SessionManager {
     }
 
     public long getUserId() {
-        Long userId = Long.parseLong(pref.getString(KEY_USER_ID, null));
+        String userIdStr = pref.getString(KEY_USER_ID, "0");
+        long userId = Long.parseLong(userIdStr);
         Log.d("SessionManager", "getUserId called, returning: " + userId);
         return userId;
     }

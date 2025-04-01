@@ -30,7 +30,7 @@
             android:id="@+id/from_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/from_text"
+            android:text="From"
             android:fontFamily="@font/raleway"
             android:textColor="@color/text_secondary"
             android:layout_marginBottom="@dimen/text_spacing"/>
@@ -39,7 +39,7 @@
             android:id="@+id/company_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/company_name"
+            android:text="@string/app_title"
             android:textSize="18sp"
             android:textStyle="bold"
             android:fontFamily="@font/raleway"

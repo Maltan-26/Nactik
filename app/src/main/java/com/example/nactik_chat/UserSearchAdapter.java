@@ -1,5 +1,8 @@
 package com.example.nactik_chat;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +25,8 @@ public class UserSearchAdapter extends RecyclerView.Adapter<UserSearchAdapter.Us
 
     public UserSearchAdapter(OnUserClickListener listener) {
         this.listener = listener;
+        String currentTime = TimeUtils.getCurrentUTCTime();
+        Log.d(TAG, String.format("Created UserSearchAdapter at %s", currentTime));
     }
 
     @NonNull

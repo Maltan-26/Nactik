@@ -10,12 +10,15 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.constraintlayout.widget.Constraints;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.squareup.picasso.Picasso;
 
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -27,7 +30,7 @@ public class specificchat extends AppCompatActivity {
     private static final String TAG = "specificchat";
     private String roomId;
     private static final String CURRENT_TIME = "2025-03-27 19:08:52";
-    private static  Long CURRENT_USER;
+    private static  long CURRENT_USER;
 
     // UI Components
     private MaterialCardView msendmessagecardview;
@@ -45,69 +48,90 @@ public class specificchat extends AppCompatActivity {
     private ChatRepository chatRepository;
     private Long receiverUserId;
     private String receiverUserName;
+    private final UserRepository userRepository  = new UserRepository();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_specificchat);
         try {
-            // Safe way to get and parse the user ID
             String userIdStr = getIntent().getStringExtra("userName");
-
-            // Log the received value
+            Log.d(TAG, "Received userName from intent: " + userIdStr);
 
             if (userIdStr != null && !userIdStr.trim().isEmpty()) {
                 try {
                     CURRENT_USER = Long.parseLong(userIdStr.trim());
-                    Log.d(TAG, "Successfully parsed userId: " + CURRENT_USER);
+                    Log.d(TAG, "Successfully parsed CURRENT_USER: " + CURRENT_USER);
                 } catch (NumberFormatException e) {
+                    Log.e(TAG, "Error parsing CURRENT_USER: " + e.getMessage());
                     CURRENT_USER = DEFAULT_USER_ID;
-                    Log.e(TAG, "Error parsing userId: " + e.getMessage());
                 }
             } else {
-                CURRENT_USER = DEFAULT_USER_ID;
                 Log.w(TAG, "No userName provided in intent");
+                CURRENT_USER = DEFAULT_USER_ID;
             }
-
         } catch (Exception e) {
+            Log.e(TAG, "Error getting userName from intent: " + e.getMessage());
             CURRENT_USER = DEFAULT_USER_ID;
-
-            Log.e(TAG, "erorror-------");
         }
+
+// In initializeViews method:
+        String receiverUidStr = getIntent().getStringExtra("receiveruid");
+        Log.d(TAG, "Received receiveruid from intent: " + receiverUidStr);
+
+        if (receiverUidStr != null && !receiverUidStr.trim().isEmpty()) {
+            try {
+                receiverUserId = Long.parseLong(receiverUidStr.trim());
+                Log.d(TAG, "Successfully parsed receiverUserId: " + receiverUserId);
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Error parsing receiverUserId: " + e.getMessage());
+                receiverUserId = DEFAULT_USER_ID;
+            }
+        } else {
+            Log.w(TAG, "No receiveruid provided in intent");
+            receiverUserId = DEFAULT_USER_ID;
+        }
+
+        receiverUserName = getIntent().getStringExtra("receivername");
+        Log.d(TAG, "Received receivername from intent: " + receiverUserName);
 
         initializeViews();
         setupToolbar();
+        System.out.println("" + CURRENT_USER + receiverUserId + receiverUserName);
 
         // Generate room ID after getting receiver ID
-        roomId = chatRepository.generateRoomId(CURRENT_USER, receiverUserId);
 
         setupRecyclerView();
+
         setupClickListeners();
         createChatRoomIfNeeded();
+        loadMessages();
         // loadMessages will be called from createChatRoomIfNeeded
     }
 
     private void createChatRoomIfNeeded() {
-        chatRepository.createChatRoomAsync(CURRENT_USER, receiverUserId, new ChatCallback<String>() {
-            @Override
-            public void onSuccess(String createdRoomId) {
-                if (createdRoomId != null) {
-                    loadMessages();
-                } else {
-                    Toast.makeText(specificchat.this, "Failed to create chat room",
-                            Toast.LENGTH_SHORT).show();
-                    finish();
-                }
-            }
+        new Thread(() -> {
+            try {
 
-            @Override
-            public void onError(Exception e) {
-                Toast.makeText(specificchat.this, "Error: " + e.getMessage(),
-                        Toast.LENGTH_SHORT).show();
-                finish();
+                if(!userRepository.isRoomExist(userRepository.generateRoomId(CURRENT_USER,receiverUserId))){
+
+                String rid = userRepository.createChatRoom(CURRENT_USER, receiverUserId);
+                runOnUiThread(() -> {
+                    if(rid != null){
+                        roomId = rid;
+                       loadMessages();
+                    }
+                    else {
+                        System.out.println("Error creating chat room");
+                    }
+                });}
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this, "Failed to load user data", Toast.LENGTH_SHORT).show());
             }
-        });
+        }).start();
     }
+
+
     public static String getCurrentUTCTime() {
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
@@ -119,80 +143,69 @@ public class specificchat extends AppCompatActivity {
         }
     }
     private void sendMessage() {
+
+        String rid = userRepository.generateRoomId(CURRENT_USER,receiverUserId);
         String messageText = messageInput.getText().toString().trim();
+
         if (!messageText.isEmpty()) {
+
             sendButton.setEnabled(false);
             long timestamp = System.currentTimeMillis();
             String timeString = getCurrentUTCTime(); // Using the TimeUtils class
 
-            // Create a pending message with all required fields
-            Message pendingMessage = new Message(
-                    0,                  // messageId (will be set by database)
-                    roomId,            // roomId
-                    CURRENT_USER,      // senderUid
-                    messageText,       // messageText
-                    timestamp,         // timestamp
-                    timeString,        // timeString
-                    false,            // isRead
-                    false,            // isDelivered
-                    "text",           // messageType
-                    null              // mediaUrl
-            );
-
+            Message pendingMessage = new Message(0, rid, CURRENT_USER, messageText, timestamp, timeString,false,false,"text",null );
+            new Thread(() -> {
+            runOnUiThread(() -> {
             // Add to UI immediately
             messagesArrayList.add(0, pendingMessage);
             messagesAdapter.notifyItemInserted(0);
             mrecyclerview.scrollToPosition(0);
             messageInput.setText("");
+            });
 
-            // Send to server
-            chatRepository.sendMessageAsync(
-                    roomId,
-                    CURRENT_USER,
-                    messageText,
-                    timestamp,
-                    timeString,
-                    new ChatCallback<Void>() {
-                        @Override
-                        public void onSuccess(Void result) {
-                            runOnUiThread(() -> {
-                                sendButton.setEnabled(true);
-                                loadMessages(); // Refresh messages to get server-generated ID
-                            });
-                        }
+            try {
+               long mid = userRepository.saveMessage(pendingMessage);
+                loadMessages();
+               System.out.println(mid+"is  the massage send");
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+            }).start();
 
-                        @Override
-                        public void onError(Exception e) {
-                            runOnUiThread(() -> {
-                                sendButton.setEnabled(true);
-                                messagesArrayList.remove(pendingMessage);
-                                messagesAdapter.notifyDataSetChanged();
-                                Toast.makeText(specificchat.this,
-                                        "Failed to send message: " + e.getMessage(),
-                                        Toast.LENGTH_SHORT).show();
-                            });
-                        }
-                    }
-            );
         }
+
     }
 
     private void loadMessages() {
-        chatRepository.getMessagesAsync(roomId, new ChatCallback<List<Message>>() {
-            @Override
-            public void onSuccess(List<Message> messages) {
-                messagesAdapter.setMessages(messages);
-                if (!messages.isEmpty()) {
-                    mrecyclerview.scrollToPosition(0);
-                }
-            }
+        new Thread(() -> {
+            try {
+                chatRepository.getMessagesAsync(userRepository.generateRoomId(CURRENT_USER,receiverUserId), new ChatCallback<List<Message>>() {
+                    @Override
+                    public void onSuccess(List<Message> messages) {
+                        messagesAdapter.setMessages(messages);
+                        if (!messages.isEmpty()) {
+                            mrecyclerview.scrollToPosition(0);
+                        }
+                        new Thread(() -> {
+                        loadMessages();}).start();
+                    }
 
-            @Override
-            public void onError(Exception e) {
-                Toast.makeText(specificchat.this, "Failed to load messages: " + e.getMessage(),
-                        Toast.LENGTH_SHORT).show();
+                    @Override
+                    public void onError(Exception e) {
+
+                        Toast.makeText(specificchat.this, "Failed to load messages: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                        new Thread(() -> {
+                            loadMessages();}).start();
+
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        });
+        }).start();
+
+
     }
 
     private void initializeViews() {
@@ -212,6 +225,7 @@ public class specificchat extends AppCompatActivity {
 
         // Get intent extras
         String userIdStr = getIntent().getStringExtra("receiveruid");
+        System.out.println(userIdStr);
         if (userIdStr != null && !userIdStr.trim().isEmpty()) {
             try {
                 receiverUserId = Long.parseLong(userIdStr.trim());

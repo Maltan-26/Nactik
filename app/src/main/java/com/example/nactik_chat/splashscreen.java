@@ -17,7 +17,6 @@ public class splashscreen extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        DatabaseHelper.getInstance();
         setContentView(R.layout.activity_splashscreen);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         SessionManager sessionManager = new SessionManager(this);

@@ -34,9 +34,6 @@ public class DatabaseHelper {
             // Create initial connection
             createConnection();
 
-            // Execute schema files
-            executeSchemaFile("database/schema.sql");
-            executeSchemaFile("database/views.sql");
 
             Log.d(TAG, String.format("Database initialized at %s", currentTime));
         } catch (Exception e) {
@@ -112,10 +109,7 @@ public class DatabaseHelper {
         connectionLock.lock();
         try {
             // Check if connection needs refresh
-            boolean shouldRefresh = connection == null ||
-                    connection.isClosed() ||
-                    !connection.isValid(CONNECTION_TIMEOUT) ||
-                    isConnectionStale();
+            boolean shouldRefresh = connection == null || connection.isClosed() || !connection.isValid(CONNECTION_TIMEOUT) || isConnectionStale();
 
             if (shouldRefresh) {
                 Log.d(TAG, String.format("Creating new database connection at %s", currentTime));

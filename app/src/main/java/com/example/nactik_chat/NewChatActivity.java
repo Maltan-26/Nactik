@@ -137,10 +137,25 @@ public class NewChatActivity extends AppCompatActivity {
 
     private void startSpecificChat(User user) {
         try {
+            Log.d(TAG, "Current user ID: " + CURRENT_USER);
+            Log.d(TAG, "Selected user: " + (user != null ? "ID: " + user.getUid() + ", Name: " + user.getName() : "null"));
+            if (user == null) {
+                Log.e(TAG, "Error: User object is null");
+                showError("Invalid user selected");
+                return;
+            }
+
+            Long currentUserId = CURRENT_USER;
+            if (currentUserId == null || currentUserId == 0) {
+                Log.e(TAG, "Error: Current user ID is null or 0");
+                showError("Session error. Please log in again");
+                return;
+            }
+
             Intent intent = new Intent(NewChatActivity.this, specificchat.class);
-            intent.putExtra("userName", CURRENT_USER);
+            intent.putExtra("userName", String.valueOf(currentUserId));
             intent.putExtra("receivername", user.getName());
-            intent.putExtra("receiveruid", user.getUid());
+            intent.putExtra("receiveruid",  String.valueOf(user.getUid()));
 
             startActivity(intent);
             finish();

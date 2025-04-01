@@ -44,7 +44,7 @@ public class chatFragment extends Fragment {
         initializeViews(view);
         setupRecyclerView();
         setupListeners();
-        loadChats();
+        //loadChats();
         return view;
     }
 
@@ -130,7 +130,7 @@ public class chatFragment extends Fragment {
 
     private void setupListeners() {
         swipeRefreshLayout.setOnRefreshListener(() -> {
-            loadChats();
+            //loadChats();
             Log.d(TAG, "Refreshing chats for user " + CURRENT_USER);
         });
 
@@ -183,7 +183,7 @@ public class chatFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadChats();
+        //loadChats();
         Log.d(TAG, "Chat fragment resumed by user " + CURRENT_USER);
     }
 

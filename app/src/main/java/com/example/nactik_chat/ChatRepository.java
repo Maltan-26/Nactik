@@ -7,6 +7,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import androidx.constraintlayout.widget.Constraints;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -33,22 +35,69 @@ public class ChatRepository {
         this.executorService = Executors.newFixedThreadPool(4);
         dbHelper = DatabaseHelper.getInstance();
     }
+    public boolean isRoomExist(String roomId) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        boolean exists = false;
 
-    public String createChatRoom(Long user1Id, Long user2Id) {
+        try {
+            conn = dbHelper.getConnection();
+            String sql = "SELECT 1 FROM chat_rooms WHERE room_id = ?";
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, roomId);
+            rs = stmt.executeQuery();
+
+            exists = rs.next(); // If a row is returned, the room exists
+
+        } catch (SQLException e) {
+            Log.e(TAG, "Error checking if room exists: " + e.getMessage());
+            // Depending on your error handling strategy, you might:
+            // - Return false (assume it doesn't exist in case of error)
+            // - Throw the exception to be handled upstream
+            // - Return a more specific error indicator (e.g., an enum)
+            // For this example, we'll assume it doesn't exist on error:
+            exists = false;
+        } finally {
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    Log.e(TAG, "Error closing ResultSet: " + e.getMessage());
+                }
+            }
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException e) {
+                    Log.e(TAG, "Error closing PreparedStatement: " + e.getMessage());
+                }
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    Log.e(TAG, "Error closing Connection: " + e.getMessage());
+                }
+            }
+        }
+
+        return exists;
+    }
+    public String createChatRoom(Long user1Id, Long user2Id) throws SQLException {
         String roomId = generateRoomId(user1Id, user2Id);
-        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
+        try (Connection conn = dbHelper.getConnection()) {
             // Start transaction
-            conn.setAutoCommit(false);
-            try {
-                // Create chat room
-                String sql1 = "INSERT INTO chat_rooms (room_id) VALUES (?)";
-                PreparedStatement stmt1 = conn.prepareStatement(sql1);
+            String sql1 = "INSERT INTO chat_rooms (room_id) VALUES (?)";
+            try (PreparedStatement stmt1 = conn.prepareStatement(sql1)) {
                 stmt1.setString(1, roomId);
                 stmt1.executeUpdate();
-
-                // Add participants
-                String sql2 = "INSERT INTO room_participants (room_id, user_id) VALUES (?, ?)";
-                PreparedStatement stmt2 = conn.prepareStatement(sql2);
+            } catch (SQLException e) {
+                Log.e(Constraints.TAG, "Error inserting chat_room: " + e.getMessage());
+                throw e;
+            }
+            String sql2 = "INSERT INTO room_participants (room_id, user_id) VALUES (?, ?)";
+            try (PreparedStatement stmt2 = conn.prepareStatement(sql2)) {
 
                 // Add first participant
                 stmt2.setString(1, roomId);
@@ -60,16 +109,16 @@ public class ChatRepository {
                 stmt2.setLong(2, user2Id);
                 stmt2.executeUpdate();
 
-                conn.commit();
-                return roomId;
             } catch (SQLException e) {
-                conn.rollback();
+                Log.e(Constraints.TAG, "Error inserting chat_room: " + e.getMessage());
                 throw e;
             }
+
         } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+            Log.e(Constraints.TAG, "Error inserting chat_room: " + e.getMessage());
+            throw e;
         }
+        return roomId;
     }
     public String generateRoomId(Long user1Id, Long user2Id) {
         // Sort IDs to ensure consistent room ID regardless of order
@@ -136,10 +185,11 @@ public class ChatRepository {
 
 
 
-    public void createChatRoomAsync(Long user1Id, Long user2Id, ChatCallback<String> callback) {
+    public void createChatRoomAsync(long user1Id, long user2Id, ChatCallback<String> callback) {
         executorService.execute(() -> {
             try {
                 String roomId = generateRoomId(user1Id, user2Id);
+                System.out.println(roomId);
                 try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
                     conn.setAutoCommit(false);
                     try {
@@ -178,7 +228,7 @@ public class ChatRepository {
     public void sendMessageAsync(String roomId, long senderId, String message,
                                  long timestamp, String timeString, ChatCallback<Void> callback) {
         executorService.execute(() -> {
-            try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
+            try (Connection conn = dbHelper.getConnection()) {
                 conn.setAutoCommit(false);
                 try {
                     // Insert message
