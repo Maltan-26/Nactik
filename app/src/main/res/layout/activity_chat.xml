@@ -84,7 +84,10 @@
         android:layout_above="@id/fragmentcontainer"
         android:clipToPadding="false"
         android:paddingTop="@dimen/list_padding"
-        android:paddingBottom="@dimen/list_padding"/>
+        android:paddingBottom="@dimen/list_padding"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/item_chat"/>
+
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/fragmentcontainer"

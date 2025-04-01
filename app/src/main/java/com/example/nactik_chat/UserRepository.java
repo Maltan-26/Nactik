@@ -37,6 +37,13 @@ public class UserRepository {
         // Use string concatenation instead of String.format
         return ids[0] + "_" + ids[1];
     }
+    public String generateRoomIdr(Long user1Id, Long user2Id) {
+        // Sort IDs to ensure consistent room ID regardless of order
+        String[] ids = {String.valueOf(user1Id), String.valueOf(user2Id)};
+        Arrays.sort(ids);
+        // Use string concatenation instead of String.format
+        return ids[1] + "_" + ids[0];
+    }
     public String createChatRoom(Long user1Id, Long user2Id) throws SQLException {
         String roomId = generateRoomId(user1Id, user2Id);
         try (Connection conn = dbHelper.getConnection()) {
@@ -114,20 +121,8 @@ public class UserRepository {
                     Log.e(ContentValues.TAG, "Error closing ResultSet: " + e.getMessage());
                 }
             }
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException e) {
-                    Log.e(ContentValues.TAG, "Error closing PreparedStatement: " + e.getMessage());
-                }
-            }
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    Log.e(ContentValues.TAG, "Error closing Connection: " + e.getMessage());
-                }
-            }
+
+
         }
 
         return exists;
@@ -136,7 +131,6 @@ public class UserRepository {
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
-
         try {
             conn = dbHelper.getConnection();
 
@@ -171,10 +165,6 @@ public class UserRepository {
         } catch (SQLException e) {
             Log.e(ContentValues.TAG, "Error saving message: " + e.getMessage());
             throw e;
-        } finally {
-            if (rs != null) try { rs.close(); } catch (SQLException e) { /* ignored */ }
-            if (stmt != null) try { stmt.close(); } catch (SQLException e) { /* ignored */ }
-            if (conn != null) try { conn.close(); } catch (SQLException e) { /* ignored */ }
         }
     }
     public User getUserById(long userId) throws SQLException {
@@ -272,15 +262,6 @@ public class UserRepository {
                         TimeUtils.getCurrentUTCTime(), e.getMessage());
                 Log.e(TAG, errorMsg);
                 callback.onError(new Exception(errorMsg));
-            } finally {
-                if (connection != null) {
-                    try {
-                        connection.close();
-                    } catch (SQLException e) {
-                        Log.e(TAG, String.format("Error closing connection at %s: %s",
-                                TimeUtils.getCurrentUTCTime(), e.getMessage()));
-                    }
-                }
             }
         });
     }

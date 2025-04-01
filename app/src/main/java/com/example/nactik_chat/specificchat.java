@@ -28,7 +28,7 @@ import java.util.TimeZone;
 
 public class specificchat extends AppCompatActivity {
     private static final String TAG = "specificchat";
-    private String roomId;
+    private static  String roomId;
     private static final String CURRENT_TIME = "2025-03-27 19:08:52";
     private static  long CURRENT_USER;
 
@@ -110,25 +110,38 @@ public class specificchat extends AppCompatActivity {
     }
 
     private void createChatRoomIfNeeded() {
-        new Thread(() -> {
-            try {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
 
-                if(!userRepository.isRoomExist(userRepository.generateRoomId(CURRENT_USER,receiverUserId))){
 
-                String rid = userRepository.createChatRoom(CURRENT_USER, receiverUserId);
-                runOnUiThread(() -> {
-                    if(rid != null){
-                        roomId = rid;
-                       loadMessages();
+
+                    if(userRepository.isRoomExist(userRepository.generateRoomId(CURRENT_USER, receiverUserId))){
+                        roomId = userRepository.generateRoomId(CURRENT_USER, receiverUserId);
+                    }
+                    else if(userRepository.isRoomExist(userRepository.generateRoomIdr(CURRENT_USER, receiverUserId))){
+                        roomId = userRepository.generateRoomIdr(CURRENT_USER, receiverUserId);
                     }
                     else {
-                        System.out.println("Error creating chat room");
+
+                        try {
+                            roomId = userRepository.createChatRoom(CURRENT_USER, receiverUserId);
+                        } catch (SQLException ex) {
+                            throw new RuntimeException(ex);
+                        }
+
+                        if (roomId != null) {
+                            loadMessages();
+                        } else {
+                            System.out.println("Error creating chat room");
+                        }
                     }
-                });}
-            } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(this, "Failed to load user data", Toast.LENGTH_SHORT).show());
-            }
-        }).start();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }}).start();
     }
 
 
@@ -144,7 +157,7 @@ public class specificchat extends AppCompatActivity {
     }
     private void sendMessage() {
 
-        String rid = userRepository.generateRoomId(CURRENT_USER,receiverUserId);
+
         String messageText = messageInput.getText().toString().trim();
 
         if (!messageText.isEmpty()) {
@@ -153,8 +166,8 @@ public class specificchat extends AppCompatActivity {
             long timestamp = System.currentTimeMillis();
             String timeString = getCurrentUTCTime(); // Using the TimeUtils class
 
-            Message pendingMessage = new Message(0, rid, CURRENT_USER, messageText, timestamp, timeString,false,false,"text",null );
-            new Thread(() -> {
+            Message pendingMessage = new Message(0, roomId, CURRENT_USER, messageText, timestamp, timeString,false,false,"text",null );
+
             runOnUiThread(() -> {
             // Add to UI immediately
             messagesArrayList.add(0, pendingMessage);
@@ -162,7 +175,9 @@ public class specificchat extends AppCompatActivity {
             mrecyclerview.scrollToPosition(0);
             messageInput.setText("");
             });
-
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
             try {
                long mid = userRepository.saveMessage(pendingMessage);
                 loadMessages();
@@ -170,40 +185,48 @@ public class specificchat extends AppCompatActivity {
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-            }).start();
 
+           } }).start();
         }
-
     }
 
     private void loadMessages() {
-        new Thread(() -> {
-            try {
-                chatRepository.getMessagesAsync(userRepository.generateRoomId(CURRENT_USER,receiverUserId), new ChatCallback<List<Message>>() {
-                    @Override
-                    public void onSuccess(List<Message> messages) {
-                        messagesAdapter.setMessages(messages);
-                        if (!messages.isEmpty()) {
-                            mrecyclerview.scrollToPosition(0);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+
+                    chatRepository.getMessagesAsync(roomId, new ChatCallback<List<Message>>() {
+                        @Override
+                        public void onSuccess(List<Message> messages) {
+                            messagesAdapter.setMessages(messages);
+                            if (!messages.isEmpty()) {
+                                mrecyclerview.scrollToPosition(0);
+                            }
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    loadMessages();
+                                }}).start();
                         }
-                        new Thread(() -> {
-                        loadMessages();}).start();
-                    }
 
-                    @Override
-                    public void onError(Exception e) {
+                        @Override
+                        public void onError(Exception e) {
 
-                        Toast.makeText(specificchat.this, "Failed to load messages: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                        new Thread(() -> {
-                            loadMessages();}).start();
+                            Toast.makeText(specificchat.this, "Failed to load messages: " + e.getMessage(),
+                                    Toast.LENGTH_SHORT).show();
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    loadMessages();
+                                }}).start();
 
-                    }
-                });
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }}).start();
 
 
     }
