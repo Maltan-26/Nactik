@@ -25,12 +25,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class specificchat extends AppCompatActivity {
     private static final String TAG = "specificchat";
     private static  String roomId;
     private static final String CURRENT_TIME = "2025-03-27 19:08:52";
     private static  long CURRENT_USER;
+    private  ExecutorService executorService;
 
     // UI Components
     private MaterialCardView msendmessagecardview;
@@ -54,6 +57,7 @@ public class specificchat extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_specificchat);
+        this.executorService = Executors.newCachedThreadPool();
         try {
             String userIdStr = getIntent().getStringExtra("userName");
             Log.d(TAG, "Received userName from intent: " + userIdStr);
@@ -114,9 +118,6 @@ public class specificchat extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-
-
-
                     if(userRepository.isRoomExist(userRepository.generateRoomId(CURRENT_USER, receiverUserId))){
                         roomId = userRepository.generateRoomId(CURRENT_USER, receiverUserId);
                     }
@@ -156,37 +157,54 @@ public class specificchat extends AppCompatActivity {
         }
     }
     private void sendMessage() {
-
-
         String messageText = messageInput.getText().toString().trim();
-
         if (!messageText.isEmpty()) {
-
             sendButton.setEnabled(false);
             long timestamp = System.currentTimeMillis();
-            String timeString = getCurrentUTCTime(); // Using the TimeUtils class
+            String timeString = TimeUtils.getCurrentUTCTime();
 
-            Message pendingMessage = new Message(0, roomId, CURRENT_USER, messageText, timestamp, timeString,false,false,"text",null );
+            Message pendingMessage = new Message(
+                    0,                  // messageId
+                    roomId,            // roomId
+                    CURRENT_USER,      // senderUid
+                    messageText,       // messageText
+                    timestamp,         // timestamp
+                    timeString,        // timeString
+                    false,            // isRead
+                    false,            // isDelivered
+                    "text",           // messageType
+                    null              // mediaUrl
+            );
 
-            runOnUiThread(() -> {
             // Add to UI immediately
             messagesArrayList.add(0, pendingMessage);
             messagesAdapter.notifyItemInserted(0);
             mrecyclerview.scrollToPosition(0);
             messageInput.setText("");
-            });
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-            try {
-               long mid = userRepository.saveMessage(pendingMessage);
-                loadMessages();
-               System.out.println(mid+"is  the massage send");
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
 
-           } }).start();
+            // Use ExecutorService for background operation
+            executorService.execute(() -> {
+                try {
+                    UserRepository userRepository = new UserRepository();
+                    long messageId = userRepository.saveMessage(pendingMessage);
+                    pendingMessage.setId(messageId);
+
+                    runOnUiThread(() -> {
+                        sendButton.setEnabled(true);
+                        loadMessages(); // Refresh messages to get server-generated ID
+                    });
+                } catch (SQLException e) {
+                    Log.e(TAG, "Error saving message: " + e.getMessage());
+                    runOnUiThread(() -> {
+                        sendButton.setEnabled(true);
+                        messagesArrayList.remove(pendingMessage);
+                        messagesAdapter.notifyDataSetChanged();
+                        Toast.makeText(specificchat.this,
+                                "Failed to send message: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            });
         }
     }
 
