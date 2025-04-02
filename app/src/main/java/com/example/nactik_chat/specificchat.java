@@ -191,7 +191,7 @@ public class specificchat extends AppCompatActivity {
 
                     runOnUiThread(() -> {
                         sendButton.setEnabled(true);
-                        loadMessages(); // Refresh messages to get server-generated ID
+                        // Refresh messages to get server-generated ID
                     });
                 } catch (SQLException e) {
                     Log.e(TAG, "Error saving message: " + e.getMessage());

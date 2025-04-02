@@ -48,7 +48,7 @@ public class UserRepository {
         List<ChatRoom> chatRooms = new ArrayList<>();
 
         try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
-            String sql = " SELECT cr.room_id, CASE WHEN cr.is_group THEN cr.last_message ELSE (SELECT u.username FROM room_participants rp JOIN users u ON u.user_id = rp.user_id WHERE rp.room_id = cr.room_id AND rp.user_id != ? LIMIT 1)END as room_name, cr.last_message, cr.last_message_time, (SELECT u.profile_image_url FROM users u JOIN room_participants rp ON rp.user_id = u.user_id WHERE rp.room_id = cr.room_id AND rp.user_id != ? LIMIT 1) as profile_image_url,(SELECT u.status FROM users u JOIN room_participants rp ON rp.user_id = u.user_id WHERE rp.room_id = cr.room_id AND rp.user_id != ? LIMIT 1) as user_status, ( SELECT COUNT(*) FROM messages m WHERE m.room_id = cr.room_id AND m.is_read = FALSE AND m.sender_uid != ?) as unread_count FROM chat_rooms cr JOIN room_participants rp ON rp.room_id = cr.room_id WHERE rp.user_id = ? GROUP BY cr.room_id ORDER BY cr.last_message_time DESC ";
+            String sql = " SELECT cr.room_id, CASE WHEN cr.is_group THEN cr.last_message ELSE (SELECT u.username FROM room_participants rp JOIN users u ON u.user_id = rp.user_id WHERE rp.room_id = cr.room_id AND rp.user_id != ? LIMIT 1)END as room_name, cr.last_message, cr.last_message_time, (SELECT u.profile_image_url FROM users u JOIN room_participants rp ON rp.user_id = u.user_id WHERE rp.room_id = cr.room_id AND rp.user_id != ? LIMIT 1) as profile_image_url,(SELECT u.status FROM users u JOIN room_participants rp ON rp.user_id = u.user_id WHERE rp.room_id = cr.room_id AND rp.user_id != ? LIMIT 1) as user_status, (SELECT u.user_id FROM users u JOIN room_participants rp ON rp.user_id = u.user_id WHERE rp.room_id = cr.room_id AND rp.user_id != ? LIMIT 1) as uid, ( SELECT COUNT(*) FROM messages m WHERE m.room_id = cr.room_id AND m.is_read = FALSE AND m.sender_uid != ?) as unread_count FROM chat_rooms cr JOIN room_participants rp ON rp.room_id = cr.room_id WHERE rp.user_id = ? GROUP BY cr.room_id ORDER BY cr.last_message_time ASC ";
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 // Set the userId parameter for all placeholders
@@ -57,9 +57,10 @@ public class UserRepository {
                 stmt.setString(3, userId.toString()); // For user_status subquery
                 stmt.setString(4, userId.toString()); // For unread_count subquery
                 stmt.setString(5, userId.toString()); // For main WHERE clause
-
+                stmt.setString(6, userId.toString());
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
+                    System.out.println(rs.getInt("uid")+"is the user ---------");
                     ChatRoom room = new ChatRoom(
                             rs.getString("room_id"),
                             rs.getString("room_name"),
@@ -67,7 +68,9 @@ public class UserRepository {
                             String.valueOf(rs.getLong("last_message_time")),
                             rs.getString("profile_image_url"),
                             "Online".equals(rs.getString("user_status")),
-                            rs.getInt("unread_count")
+                            rs.getInt("unread_count"),
+                            rs.getInt("uid"),
+                            userId
                     );
                     chatRooms.add(room);
                 }
@@ -160,17 +163,19 @@ public class UserRepository {
         return exists;
     }
     public long saveMessage(Message message) throws SQLException {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        try {
-            conn = dbHelper.getConnection();
+        String currentTime = TimeUtils.getCurrentUTCTime();
 
+
+
+        try(Connection conn = dbHelper.getConnection()) {
+
+
+            // First, insert the message
             String sql = "INSERT INTO messages (room_id, sender_uid, message_text, " +
                     "timestamp, time_string, message_type, media_url) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
-            System.out.println( message.getRoomId()+"---------------------");
-            stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+
+            PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             stmt.setString(1, message.getRoomId());
             stmt.setLong(2, message.getSenderUid());
             stmt.setString(3, message.getMessageText());
@@ -185,17 +190,37 @@ public class UserRepository {
                 throw new SQLException("Creating message failed, no rows affected.");
             }
 
-            rs = stmt.getGeneratedKeys();
+            // Get the generated message ID
+            ResultSet rs = stmt.getGeneratedKeys();
+            long messageId;
             if (rs.next()) {
-                long messageId = rs.getLong(1);
-
-                return messageId;
+                messageId = rs.getLong(1);
             } else {
                 throw new SQLException("Creating message failed, no ID obtained.");
             }
 
+            // Update the chat room's last message
+            String updateRoomSql = "UPDATE chat_rooms SET last_message = ?, last_message_time = ? " +
+                    "WHERE room_id = ?";
+            try (PreparedStatement updateStmt = conn.prepareStatement(updateRoomSql)) {
+                updateStmt.setString(1, message.getMessageText());
+                updateStmt.setLong(2, System.currentTimeMillis());
+                updateStmt.setString(3, message.getRoomId());
+                updateStmt.executeUpdate();
+            }
+
+            // Commit the transaction
+
+            Log.d(TAG, String.format("Message saved successfully at %s with ID: %d",
+                    currentTime, messageId));
+
+            return messageId;
+
         } catch (SQLException e) {
-            Log.e(ContentValues.TAG, "Error saving message: " + e.getMessage());
+            // Rollback transaction on error
+
+            Log.e(TAG, String.format("Error saving message at %s: %s",
+                    currentTime, e.getMessage()));
             throw e;
         }
     }

@@ -47,6 +47,8 @@ public class chatFragment extends Fragment {
         setupRecyclerView();
         setupListeners();
 
+
+
         // Get user ID
         userRepository = new UserRepository();
         currentUserId = ((chatActivity) requireActivity()).getCurrentUserId();

@@ -4,6 +4,8 @@ package com.example.nactik_chat;
 public class ChatRoom {
     private String roomId;
     private String roomName;
+    private Long sendersnid;
+    private Long crid;
     private String lastMessage;
     private String lastMessageTime;
     private String imageUrl;
@@ -12,7 +14,9 @@ public class ChatRoom {
 
     public ChatRoom(String roomId, String roomName, String lastMessage,
                     String lastMessageTime, String imageUrl, boolean online,
-                    int unreadCount) {
+                    int unreadCount,long sendersnid, Long crid) {
+        this.crid = crid;
+        this.sendersnid = sendersnid;
         this.roomId = roomId;
         this.roomName = roomName;
         this.lastMessage = lastMessage;
@@ -32,9 +36,10 @@ public class ChatRoom {
             return timestamp;
         }
     }
-
+    public Long getCrid() { return crid; }
 
     public String getRoomId() { return roomId; }
+    public Long getSendersnid() { return sendersnid; }
     public String getRoomName() { return roomName; }
     public String getLastMessage() { return lastMessage; }
     public String getLastMessageTime() { return lastMessageTime; }

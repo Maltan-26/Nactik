@@ -46,6 +46,7 @@ public class ChatRoomAdapter extends RecyclerView.Adapter<ChatRoomAdapter.ChatRo
         private TextView timeText;
         private View onlineStatusIndicator;
         private TextView unreadBadge;
+        private long cr;
 
         ChatRoomViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -62,9 +63,9 @@ public class ChatRoomAdapter extends RecyclerView.Adapter<ChatRoomAdapter.ChatRo
                 if (position != RecyclerView.NO_POSITION) {
                     ChatRoom room = chatRooms.get(position);
                     Intent intent = new Intent(itemView.getContext(), specificchat.class);
-                    intent.putExtra("room_id", room.getRoomId());
+                    intent.putExtra("userName", String.valueOf(room.getCrid()));
                     intent.putExtra("receivername", room.getRoomName());
-                    intent.putExtra("receiverImage", room.getImageUrl());
+                    intent.putExtra("receiveruid", String.valueOf(room.getSendersnid()));
                     itemView.getContext().startActivity(intent);
                 }
             });
