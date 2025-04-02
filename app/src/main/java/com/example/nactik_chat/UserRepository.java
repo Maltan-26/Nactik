@@ -44,6 +44,38 @@ public class UserRepository {
         // Use string concatenation instead of String.format
         return ids[1] + "_" + ids[0];
     }
+    public List<ChatRoom> getChatRoomsForUser(Long userId) throws SQLException {
+        List<ChatRoom> chatRooms = new ArrayList<>();
+
+        try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
+            String sql = " SELECT cr.room_id, CASE WHEN cr.is_group THEN cr.last_message ELSE (SELECT u.username FROM room_participants rp JOIN users u ON u.user_id = rp.user_id WHERE rp.room_id = cr.room_id AND rp.user_id != ? LIMIT 1)END as room_name, cr.last_message, cr.last_message_time, (SELECT u.profile_image_url FROM users u JOIN room_participants rp ON rp.user_id = u.user_id WHERE rp.room_id = cr.room_id AND rp.user_id != ? LIMIT 1) as profile_image_url,(SELECT u.status FROM users u JOIN room_participants rp ON rp.user_id = u.user_id WHERE rp.room_id = cr.room_id AND rp.user_id != ? LIMIT 1) as user_status, ( SELECT COUNT(*) FROM messages m WHERE m.room_id = cr.room_id AND m.is_read = FALSE AND m.sender_uid != ?) as unread_count FROM chat_rooms cr JOIN room_participants rp ON rp.room_id = cr.room_id WHERE rp.user_id = ? GROUP BY cr.room_id ORDER BY cr.last_message_time DESC ";
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                // Set the userId parameter for all placeholders
+                stmt.setString(1, userId.toString()); // For room_name subquery
+                stmt.setString(2, userId.toString()); // For profile_image_url subquery
+                stmt.setString(3, userId.toString()); // For user_status subquery
+                stmt.setString(4, userId.toString()); // For unread_count subquery
+                stmt.setString(5, userId.toString()); // For main WHERE clause
+
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    ChatRoom room = new ChatRoom(
+                            rs.getString("room_id"),
+                            rs.getString("room_name"),
+                            rs.getString("last_message"),
+                            String.valueOf(rs.getLong("last_message_time")),
+                            rs.getString("profile_image_url"),
+                            "Online".equals(rs.getString("user_status")),
+                            rs.getInt("unread_count")
+                    );
+                    chatRooms.add(room);
+                }
+            }
+        }
+
+        return chatRooms;
+    }
     public String createChatRoom(Long user1Id, Long user2Id) throws SQLException {
         String roomId = generateRoomId(user1Id, user2Id);
         try (Connection conn = dbHelper.getConnection()) {

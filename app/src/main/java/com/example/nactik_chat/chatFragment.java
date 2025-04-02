@@ -10,6 +10,7 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
@@ -21,6 +22,7 @@ import java.util.List;
 public class chatFragment extends Fragment {
     private static final String TAG = "chatFragment";
     private static final String CURRENT_USER = "Maltan-26";
+    private static final int POLLING_INTERVAL = 3000; // 3 seconds
 
     // Views
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -29,22 +31,30 @@ public class chatFragment extends Fragment {
     private CircularProgressIndicator loadingIndicator;
     private FloatingActionButton fabNewChat;
 
-    // Adapters and Data
-    private ChatAdapter chatAdapter;
-    private ChatRepository chatRepository;
-
-    public chatFragment() {
-        // Required empty public constructor
-    }
+    // Adapter and Data
+    private ChatRoomAdapter chatRoomAdapter;
+    private UserRepository userRepository;
+    private Long currentUserId;
+    private boolean isPolling = true;
+    private volatile boolean isLoadingRooms = false;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_chat, container, false);
+
+        // Initialize everything only once
         initializeViews(view);
         setupRecyclerView();
         setupListeners();
-        //loadChats();
+
+        // Get user ID
+        userRepository = new UserRepository();
+        currentUserId = ((chatActivity) requireActivity()).getCurrentUserId();
+
+        // Initial load
+        loadChatRooms();
+        startPolling();
+
         return view;
     }
 
@@ -54,120 +64,105 @@ public class chatFragment extends Fragment {
         emptyState = view.findViewById(R.id.emptyState);
         loadingIndicator = view.findViewById(R.id.loadingIndicator);
         fabNewChat = view.findViewById(R.id.fabNewChat);
-        chatRepository = new ChatRepository();
 
         // Configure SwipeRefreshLayout
         swipeRefreshLayout.setColorSchemeResources(R.color.primary_color);
     }
 
     private void setupRecyclerView() {
-        chatAdapter = new ChatAdapter(getContext(), CURRENT_USER);
-        recyclerView.setAdapter(chatAdapter);
-        // LinearLayoutManager is already set in XML using app:layoutManager
+        chatRoomAdapter = new ChatRoomAdapter();
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        recyclerView.setAdapter(chatRoomAdapter);
     }
 
-    private void loadChats() {
-        String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 06:46:59
-        Log.d(TAG, String.format("Loading chats at %s for user: %s", currentTime, CURRENT_USER));
+    private void setupListeners() {
+        swipeRefreshLayout.setOnRefreshListener(this::loadChatRooms);
+        fabNewChat.setOnClickListener(v -> {
+            startNewChat();
+            Log.d(TAG, String.format("New chat button clicked at %s by user %s",
+                    TimeUtils.getCurrentUTCTime(), CURRENT_USER));
+        });
+    }
+
+    private void loadChatRooms() {
+        String currentTime = TimeUtils.getCurrentUTCTime();
+
+        if (currentUserId == null) {
+            Log.e(TAG, String.format("Cannot load chat rooms: no user ID at %s", currentTime));
+            hideLoadingState();
+            return;
+        }
+
+        if (isLoadingRooms) {
+            Log.d(TAG, String.format("Skip loading: already in progress at %s", currentTime));
+            return;
+        }
 
         showLoadingState();
+        isLoadingRooms = true;
 
         new Thread(() -> {
             try {
-                // Get chats from repository
-                List<Message> chats = chatRepository.getRecentMessages("defaultRoom", 0);
+                final List<ChatRoom> rooms = userRepository.getChatRoomsForUser(currentUserId);
 
-                // Update UI on main thread
-                if (isAdded() && getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        try {
-                            updateUIWithChats(chats);
-                        } catch (Exception e) {
-                            String errorMsg = String.format("Error updating UI at %s: %s",
-                                    TimeUtils.getCurrentUTCTime(), e.getMessage());
-                            Log.e(TAG, errorMsg);
-                            showError("Failed to update chats");
-                        }
-                    });
+                if (getActivity() == null) {
+                    isLoadingRooms = false;
+                    return;
                 }
-            } catch (Exception e) {
-                String errorMsg = String.format("Error loading chats at %s: %s",
-                        TimeUtils.getCurrentUTCTime(), e.getMessage());
-                Log.e(TAG, errorMsg);
 
-                if (isAdded() && getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    try {
+                        if (rooms != null && !rooms.isEmpty()) {
+                            recyclerView.setVisibility(View.VISIBLE);
+                            emptyState.setVisibility(View.GONE);
+                            chatRoomAdapter.setChatRooms(rooms);
+                            Log.d(TAG, String.format("Loaded and displayed %d chat rooms at %s",
+                                    rooms.size(), currentTime));
+                        } else {
+                            recyclerView.setVisibility(View.GONE);
+                            emptyState.setVisibility(View.VISIBLE);
+                            Log.d(TAG, String.format("No chat rooms found at %s", currentTime));
+                        }
+                    } finally {
+                        hideLoadingState();
+                        isLoadingRooms = false;
+                    }
+                });
+            } catch (Exception e) {
+                Log.e(TAG, String.format("Error loading chat rooms at %s: %s",
+                        currentTime, e.getMessage()));
+                if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
-                        showError("Failed to load chats");
-                        showEmptyState();
+                        showError("Failed to load chat rooms");
+                        hideLoadingState();
+                        isLoadingRooms = false;
                     });
                 }
             }
         }).start();
     }
 
-    private void updateUIWithChats(List<Message> chats) {
-        String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 06:46:59
-
-        try {
-            hideLoadingState();
-
-            if (chats != null && !chats.isEmpty()) {
-                chatAdapter.setMessages(chats);
-                showContentState();
-                Log.d(TAG, String.format("Loaded %d chats at %s", chats.size(), currentTime));
-            } else {
-                showEmptyState();
-                Log.d(TAG, String.format("No chats found at %s for user %s",
-                        currentTime, CURRENT_USER));
-            }
-        } catch (Exception e) {
-            String errorMsg = String.format("Error updating UI with chats at %s: %s",
-                    currentTime, e.getMessage());
-            Log.e(TAG, errorMsg);
-            showError("Failed to display chats");
-        }
-    }
-
-    private void setupListeners() {
-        swipeRefreshLayout.setOnRefreshListener(() -> {
-            //loadChats();
-            Log.d(TAG, "Refreshing chats for user " + CURRENT_USER);
-        });
-
-        fabNewChat.setOnClickListener(v -> {
-            startNewChat();
-            Log.d(TAG, "New chat button clicked by user " + CURRENT_USER);
-        });
-    }
-
     private void showLoadingState() {
-        loadingIndicator.setVisibility(View.VISIBLE);
-        emptyState.setVisibility(View.GONE);
-        recyclerView.setVisibility(View.GONE);
+        if (getActivity() == null) return;
+        getActivity().runOnUiThread(() -> {
+            loadingIndicator.setVisibility(View.VISIBLE);
+            swipeRefreshLayout.setRefreshing(true);
+        });
     }
 
     private void hideLoadingState() {
-        loadingIndicator.setVisibility(View.GONE);
-        swipeRefreshLayout.setRefreshing(false);
-    }
-
-    private void showContentState() {
-        recyclerView.setVisibility(View.VISIBLE);
-        emptyState.setVisibility(View.GONE);
-    }
-
-    private void showEmptyState() {
-        recyclerView.setVisibility(View.GONE);
-        emptyState.setVisibility(View.VISIBLE);
+        if (getActivity() == null) return;
+        getActivity().runOnUiThread(() -> {
+            loadingIndicator.setVisibility(View.GONE);
+            swipeRefreshLayout.setRefreshing(false);
+        });
     }
 
     private void showError(String message) {
-        if (getActivity() != null) {
-            getActivity().runOnUiThread(() -> {
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                hideLoadingState();
-            });
-        }
+        if (getActivity() == null) return;
+        getActivity().runOnUiThread(() -> {
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+        });
     }
 
     private void startNewChat() {
@@ -175,22 +170,37 @@ public class chatFragment extends Fragment {
             Intent intent = new Intent(getActivity(), NewChatActivity.class);
             startActivity(intent);
         } catch (Exception e) {
-            Log.e(TAG, "Error starting new chat: " + e.getMessage());
+            Log.e(TAG, String.format("Error starting new chat at %s: %s",
+                    TimeUtils.getCurrentUTCTime(), e.getMessage()));
             showError("Failed to start new chat");
         }
+    }
+
+    private void startPolling() {
+        new Thread(() -> {
+            while (isPolling && !Thread.interrupted()) {
+                try {
+                    loadChatRooms();
+                    Thread.sleep(POLLING_INTERVAL);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }).start();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        //loadChats();
-        Log.d(TAG, "Chat fragment resumed by user " + CURRENT_USER);
+        isPolling = true;
+        loadChatRooms();
+        startPolling();
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        // Clean up any resources
-        recyclerView.setAdapter(null);
+    public void onPause() {
+        super.onPause();
+        isPolling = false;
     }
 }

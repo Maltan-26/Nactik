@@ -279,4 +279,8 @@ public class chatActivity extends AppCompatActivity {
         }
         super.onDestroy();
     }
+
+    public Long getCurrentUserId() {
+        return currentUserId = sessionManager.getUserId();
+    }
 }

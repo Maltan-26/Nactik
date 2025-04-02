@@ -5,8 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
-    tools:context=".chatFragment">
+    android:background="@color/white">
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
@@ -18,67 +17,47 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:padding="@dimen/list_padding"
-            android:scrollbars="vertical"
-            android:contentDescription="@string/tab_chats_description"
-            android:importantForAccessibility="yes"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/item_chat"
-            tools:itemCount="5"/>
+            android:visibility="visible"
+            android:padding="8dp"/>
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- Empty state view -->
     <LinearLayout
         android:id="@+id/emptyState"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:gravity="center"
-        android:orientation="vertical"
         android:visibility="gone"
-        android:importantForAccessibility="yes"
-        tools:visibility="visible">
-
-        <ImageView
-            android:layout_width="@dimen/empty_state_icon_size"
-            android:layout_height="@dimen/empty_state_icon_size"
-            android:contentDescription="@string/no_chats_description"
-            android:src="@drawable/ic_no_chats"
-            app:tint="@color/icon_color"/>
+        android:orientation="vertical">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/default_margin"
-            android:text="@string/no_chats_message"
-            android:textAlignment="center"
-            android:textColor="@color/text_secondary"
+            android:text="No chat rooms available"
             android:textSize="16sp"/>
-
     </LinearLayout>
 
-    <!-- Loading indicator -->
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/loadingIndicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:indeterminate="true"
         android:visibility="gone"
-        android:contentDescription="@string/loading_description"
-        app:indicatorColor="@color/primary_color"/>
+        android:indeterminate="true"/>
 
-    <!-- FAB for new chat -->
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabNewChat"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_margin="@dimen/fab_margin"
-        android:contentDescription="@string/new_chat_description"
+        android:contentDescription="@string/new_call_description"
         app:srcCompat="@drawable/ic_new_chat"
-        app:backgroundTint="@color/accent_color"/>
+        app:backgroundTint="@color/accent_color"
+        app:tint="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </RelativeLayout>
