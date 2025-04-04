@@ -40,6 +40,7 @@ public class UpdateProfile extends AppCompatActivity {
     private ImageView profileImageView;
     private TextInputEditText usernameField;
     private MaterialButton updateButton;
+    private MaterialButton logout;
     private CircularProgressIndicator progressBar;
     private Toolbar toolbar;
     private ImageButton backButton;
@@ -90,6 +91,7 @@ public class UpdateProfile extends AppCompatActivity {
         progressBar = findViewById(R.id.progressbarofupdateprofile);
         toolbar = findViewById(R.id.toolbarofupdateprofile);
         backButton = findViewById(R.id.backbuttonofupdateprofile);
+        logout = findViewById(R.id.logout);
     }
 
     private void setupToolbar() {
@@ -133,16 +135,27 @@ public class UpdateProfile extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        imageCardView.setOnClickListener(v -> selectImage());
+        imageCardView.setOnClickListener(view -> {
+            Intent intent = new Intent(Intent.ACTION_PICK,
+                    MediaStore.Images.Media.INTERNAL_CONTENT_URI);
+            startActivityForResult(intent, PICK_IMAGE);
+        });
+
+        // Add ImageView click listener
+        profileImageView.setOnClickListener(view -> {
+            Intent intent = new Intent(Intent.ACTION_PICK,
+                    MediaStore.Images.Media.INTERNAL_CONTENT_URI);
+            startActivityForResult(intent, PICK_IMAGE);
+        });
         updateButton.setOnClickListener(v -> updateProfile());
+        logout.setOnClickListener(v -> {
+            sessionManager.logout();
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
+        });
     }
 
-    private void selectImage() {
-        Intent intent = new Intent(Intent.ACTION_PICK,
-                MediaStore.Images.Media.INTERNAL_CONTENT_URI);
-        startActivityForResult(intent, PICK_IMAGE);
 
-    }
 
     private void updateProfile() {
         String newUsername = usernameField.getText().toString().trim();

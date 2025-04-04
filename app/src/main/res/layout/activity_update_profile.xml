@@ -52,33 +52,31 @@
         </androidx.appcompat.widget.Toolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
-
-    <com.google.android.material.card.MaterialCardView
+    <androidx.cardview.widget.CardView
         android:id="@+id/getnewuserimage"
         android:layout_width="@dimen/profile_image_size"
         android:layout_height="@dimen/profile_image_size"
         android:layout_above="@+id/textInputLayout"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="@dimen/large_margin"
+        android:layout_marginBottom="@dimen/default_margin"
         app:cardCornerRadius="@dimen/profile_image_radius"
-        app:cardElevation="4dp">
+        app:cardElevation="@dimen/card_elevation">
 
         <ImageView
             android:id="@+id/getnewuserimageinimageview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+
             android:contentDescription="@string/profile_image_description"
             android:scaleType="centerCrop"
-            android:src="@drawable/defaultprofile"/>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="?attr/selectableItemBackground"
+            android:src="@drawable/defaultprofile"
             android:clickable="true"
-            android:focusable="true"/>
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"/>
 
-    </com.google.android.material.card.MaterialCardView>
+    </androidx.cardview.widget.CardView>
+
+
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/textInputLayout"
@@ -113,7 +111,20 @@
         android:text="@string/update_profile_button"
         android:textColor="@color/white"
         app:cornerRadius="8dp"
-        app:backgroundTint="@color/accent_color"/>
+        app:backgroundTint="@color/button_green"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/logout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textInputLayout"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="70dp"
+        android:minWidth="150dp"
+        android:text="Logout"
+        android:textColor="@color/white"
+        app:cornerRadius="8dp"
+        app:backgroundTint="@color/badge_color"/>
 
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/progressbarofupdateprofile"
