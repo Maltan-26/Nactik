@@ -14,7 +14,7 @@
     <string name="tab_status_description">View status updates</string>
     <string name="tab_calls_description">View calls</string>
     <string name="app_logo_description">Chat App Logo</string>
-    <string name="otp_instruction_text">Chat App Will Send OTP To Your Entered Number</string>
+    <string name="otp_instruction_text">Nactik Will Send OTP To Your Entered Number</string>
     <string name="phone_number_hint">Enter Your Number Here</string>
     <string name="send_otp_button_text">Send OTP</string>
     <string name="loading_description">Loading</string>

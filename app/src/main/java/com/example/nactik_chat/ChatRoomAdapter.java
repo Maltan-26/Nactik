@@ -1,5 +1,6 @@
 package com.example.nactik_chat;
 
+import android.content.Context;
 import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,11 +13,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChatRoomAdapter extends RecyclerView.Adapter<ChatRoomAdapter.ChatRoomViewHolder> {
-    private List<ChatRoom> chatRooms = new ArrayList<>();
+    private  long currentUserId;
+    private  Context context;
+    private List<ChatRoom> chatRooms ;
+    public ChatRoomAdapter(Context context, long currentUserId) {
+        this.context = context;
+        this.currentUserId = currentUserId;
+        this.chatRooms = new ArrayList<>();
+    }
+
     private static final String TAG = "ChatRoomAdapter";
 
-    public void setChatRooms(List<ChatRoom> rooms) {
-        this.chatRooms = rooms;
+    public void setChatRooms(List<ChatRoom> newRooms) {
+        String currentTime = TimeUtils.getCurrentUTCTime();
+
+
+        this.chatRooms = new ArrayList<>(newRooms);  // Create new list
         notifyDataSetChanged();
     }
 

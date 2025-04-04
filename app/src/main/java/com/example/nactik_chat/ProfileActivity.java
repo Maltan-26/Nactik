@@ -16,225 +16,198 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class ProfileActivity extends AppCompatActivity {
-
     private static final String TAG = "ProfileActivity";
-    private static final int PICK_IMAGE = 123;
-    private static final String CURRENT_TIME = "2025-03-27 16:58:13";
-    private static final String CURRENT_USER = "Maltan-26";
+    private static  String CURRENT_USER;
+    private static final String CURRENT_TIME = TimeUtils.getCurrentUTCTime();
 
     // UI Components
-    private ImageView userProfilePic;
-    private EditText userNameField;
-    private EditText userStatusField;
-    private ImageButton saveProfileButton;
-    private ProgressBar progressBar;
+    private ImageView profileImageView;
+    private EditText usernameField;
+    private MaterialButton updateProfileButton;
+    private CircularProgressIndicator progressBar;
     private Toolbar toolbar;
-    private TextView lastSeenText;
+    private ImageButton backButton;
 
-    // Database helper
+    // Data Management
     private DatabaseHelper dbHelper;
-
-    // User data
-    private String imageUriAccessToken;
-    private Uri imageUri;
-    private String userName;
-    private String userStatus;
+    private SessionManager sessionManager;
+    private String currentImageUrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
+        CURRENT_USER = getIntent().getStringExtra("userId");
+
+        // Initialize session management
+        sessionManager = new SessionManager(this);
+        if (!sessionManager.isLoggedIn()) {
+            Log.w(TAG, String.format("User not logged in at %s", CURRENT_TIME));
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
+            return;
+        }
 
         initializeViews();
-        setupDatabase();
         setupToolbar();
         loadUserProfile();
-        setupClickListeners();
 
-        Log.d(TAG, "Profile activity started at " + CURRENT_TIME + " by user " + CURRENT_USER);
+        Log.d(TAG, String.format("Profile activity started at %s for user %s",
+                CURRENT_TIME, CURRENT_USER));
     }
 
     private void initializeViews() {
-        // Update view references to match your layout IDs
-        userProfilePic = findViewById(R.id.viewuserimageinimageview);
-        userNameField = findViewById(R.id.viewusername);
+        // Find views
+        profileImageView = findViewById(R.id.viewuserimageinimageview);
+        String imagePath = getIntent().getStringExtra("Url");; // Change this path accordingly
+        Glide.with(this).load(new File(imagePath)).into(profileImageView);
+        usernameField = findViewById(R.id.viewusername);
+        usernameField.setText(CURRENT_USER);
+        updateProfileButton = findViewById(R.id.movetoupdateprofile);
+        progressBar = findViewById(R.id.progressbarofviewprofile);
         toolbar = findViewById(R.id.toolbarofviewprofile);
+        backButton = findViewById(R.id.backbuttonofviewprofile);
 
-        // Back button in toolbar
-        ImageButton backButton = findViewById(R.id.backbuttonofviewprofile);
+        // Setup click listeners
+        updateProfileButton.setOnClickListener(v -> openUpdateProfile());
         backButton.setOnClickListener(v -> onBackPressed());
-
-        // Update profile button
-        MaterialButton updateProfileButton = findViewById(R.id.movetoupdateprofile);
-        updateProfileButton.setOnClickListener(v -> {
-            Intent intent = new Intent(ProfileActivity.this, UpdateProfile.class);
-            startActivity(intent);
-        });
-
-        // Set the current time in the toolbar title
-        TextView titleText = findViewById(R.id.myapptext);
-        titleText.setText(getString(R.string.your_profile_text));
-    }
-
-    private void setupDatabase() {
-        dbHelper = DatabaseHelper.getInstance();
     }
 
     private void setupToolbar() {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
     }
 
     private void loadUserProfile() {
-        progressBar.setVisibility(View.VISIBLE);
-        new Thread(() -> {
-            try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
-                String sql = "SELECT username, status, profile_image_url, last_updated " +
-                        "FROM users WHERE user_id = ?";
+        String currentTime = TimeUtils.getCurrentUTCTime();
+        Long userId = sessionManager.getUserId();
 
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                stmt.setString(1, CURRENT_USER);
-
-                ResultSet rs = stmt.executeQuery();
-
-                if (rs.next()) {
-                    String username = rs.getString("username");
-                    String status = rs.getString("status");
-                    String imageUrl = rs.getString("profile_image_url");
-                    String lastUpdated = rs.getString("last_updated");
-
-                    runOnUiThread(() -> {
-                        userNameField.setText(username);
-                        userStatusField.setText(status);
-                        lastSeenText.setText("Last updated: " + lastUpdated);
-
-                        if (imageUrl != null && !imageUrl.isEmpty()) {
-                            Picasso.get().load(imageUrl).into(userProfilePic);
-                            imageUriAccessToken = imageUrl;
-                        }
-                        progressBar.setVisibility(View.GONE);
-                    });
-                }
-            } catch (SQLException e) {
-                Log.e(TAG, "Database error: " + e.getMessage());
-                runOnUiThread(() -> {
-                    Toast.makeText(ProfileActivity.this,
-                            "Failed to load profile", Toast.LENGTH_SHORT).show();
-                    progressBar.setVisibility(View.GONE);
-                });
-            }
-        }).start();
-    }
-
-    private void setupClickListeners() {
-        userProfilePic.setOnClickListener(v -> {
-            Intent intent = new Intent();
-            intent.setType("image/*");
-            intent.setAction(Intent.ACTION_GET_CONTENT);
-            startActivityForResult(Intent.createChooser(intent, "Select Image"),
-                    PICK_IMAGE);
-        });
-
-        saveProfileButton.setOnClickListener(v -> updateProfile());
-    }
-
-    private void updateProfile() {
-        String newName = userNameField.getText().toString();
-        String newStatus = userStatusField.getText().toString();
-
-        if (newName.isEmpty() || newStatus.isEmpty()) {
-            Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+        if (userId == null || userId == 0) {
+            Log.e(TAG, String.format("Invalid user ID at %s", currentTime));
+            showError("Invalid user session");
             return;
         }
 
-        progressBar.setVisibility(View.VISIBLE);
-
+        showLoading();
         new Thread(() -> {
             try (Connection conn = DatabaseHelper.getInstance().getConnection()) {
-                String sql = "UPDATE users SET username = ?, status = ?, " +
-                        "profile_image_url = ?, last_updated = ? " +
-                        "WHERE user_id = ?";
+                String sql = "SELECT username, profile_image_url, status, last_updated " +
+                        "FROM users WHERE user_id = ?";
 
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                stmt.setString(1, newName);
-                stmt.setString(2, newStatus);
-                stmt.setString(3, imageUriAccessToken);
-                stmt.setString(4, CURRENT_TIME);
-                stmt.setString(5, CURRENT_USER);
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setLong(1, userId);
 
-                int rowsAffected = stmt.executeUpdate();
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) {
+                            String username = rs.getString("username");
+                            String imageUrl = rs.getString("profile_image_url");
+                            String status = rs.getString("status");
+                            String lastUpdated = rs.getString("last_updated");
 
-                runOnUiThread(() -> {
-                    if (rowsAffected > 0) {
-                        Toast.makeText(ProfileActivity.this,
-                                "Profile Updated Successfully", Toast.LENGTH_SHORT).show();
-                        lastSeenText.setText("Last updated: " + CURRENT_TIME);
-                    } else {
-                        Toast.makeText(ProfileActivity.this,
-                                "No changes made", Toast.LENGTH_SHORT).show();
+                            runOnUiThread(() -> {
+                                updateUI(username, imageUrl, status, lastUpdated);
+                                hideLoading();
+                            });
+                        } else {
+                            runOnUiThread(() -> {
+                                showError("User not found");
+                                hideLoading();
+                            });
+                        }
                     }
-                    progressBar.setVisibility(View.GONE);
-                });
-
-                Log.d(TAG, "Profile updated at " + CURRENT_TIME +
-                        " by user " + CURRENT_USER);
-
+                }
             } catch (SQLException e) {
-                Log.e(TAG, "Database error: " + e.getMessage());
+                Log.e(TAG, String.format("Database error at %s: %s",
+                        currentTime, e.getMessage()));
                 runOnUiThread(() -> {
-                    Toast.makeText(ProfileActivity.this,
-                            "Failed to update profile", Toast.LENGTH_SHORT).show();
-                    progressBar.setVisibility(View.GONE);
+                    showError("Failed to load profile");
+                    hideLoading();
                 });
             }
         }).start();
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+    private void updateUI(String username, String imageUrl, String status, String lastUpdated) {
+        usernameField.setText(username);
 
-        if (requestCode == PICK_IMAGE && resultCode == RESULT_OK && data != null) {
-            imageUri = data.getData();
-            try {
-                userProfilePic.setImageURI(imageUri);
-                // Here you would typically upload the image to your image hosting service
-                // and get back a URL to store in the database
-                // For now, we'll just store the local URI
-                imageUriAccessToken = imageUri.toString();
-            } catch (Exception e) {
-                Log.e(TAG, "Error setting profile image: " + e.getMessage());
-                Toast.makeText(this, "Error loading image", Toast.LENGTH_SHORT).show();
-            }
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Picasso.get()
+                    .load(imageUrl)
+                    .placeholder(R.drawable.defaultprofile)
+                    .error(R.drawable.defaultprofile)
+                    .into(profileImageView);
+            currentImageUrl = imageUrl;
+        }
+
+        Log.d(TAG, String.format("UI updated at %s for user %s with status %s",
+                CURRENT_TIME, username, status));
+    }
+
+    private void openUpdateProfile() {
+        try {
+            Intent intent = new Intent(this, UpdateProfile.class);
+            intent.putExtra("userId", sessionManager.getUserId());
+            intent.putExtra("Name", CURRENT_USER);
+            intent.putExtra("Url", currentImageUrl);
+            startActivity(intent);
+        } catch (Exception e) {
+            Log.e(TAG, String.format("Error opening update profile at %s: %s",
+                    CURRENT_TIME, e.getMessage()));
+            showError("Unable to open profile update");
         }
     }
 
-    @Override
-    public boolean onSupportNavigateUp() {
-        onBackPressed();
-        return true;
+    private void showLoading() {
+        if (progressBar != null) {
+            progressBar.setVisibility(View.VISIBLE);
+        }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        Log.d(TAG, "Profile activity paused at " + CURRENT_TIME);
+    private void hideLoading() {
+        if (progressBar != null) {
+            progressBar.setVisibility(View.GONE);
+        }
+    }
+
+    private void showError(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "Profile activity resumed at " + CURRENT_TIME);
+        loadUserProfile(); // Reload profile data when returning to the screen
+        Log.d(TAG, String.format("Profile activity resumed at %s",
+                TimeUtils.getCurrentUTCTime()));
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        Log.d(TAG, String.format("Profile activity closing at %s",
+                TimeUtils.getCurrentUTCTime()));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Clean up any resources
+        if (profileImageView != null) {
+            profileImageView.setImageDrawable(null);
+        }
     }
 }

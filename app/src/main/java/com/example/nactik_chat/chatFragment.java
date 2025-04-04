@@ -42,6 +42,8 @@ public class chatFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_chat, container, false);
 
+        userRepository = new UserRepository();
+        currentUserId = ((chatActivity) requireActivity()).getCurrentUserId();
         // Initialize everything only once
         initializeViews(view);
         setupRecyclerView();
@@ -50,8 +52,6 @@ public class chatFragment extends Fragment {
 
 
         // Get user ID
-        userRepository = new UserRepository();
-        currentUserId = ((chatActivity) requireActivity()).getCurrentUserId();
 
         // Initial load
         loadChatRooms();
@@ -72,7 +72,7 @@ public class chatFragment extends Fragment {
     }
 
     private void setupRecyclerView() {
-        chatRoomAdapter = new ChatRoomAdapter();
+        chatRoomAdapter = new ChatRoomAdapter(requireContext(), currentUserId);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(chatRoomAdapter);
     }

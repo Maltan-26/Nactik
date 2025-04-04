@@ -1,7 +1,10 @@
 package com.example.nactik_chat;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -22,11 +25,13 @@ public class MainActivity extends AppCompatActivity {
 
     private AuthRepository authRepository;
     private OtpService otpService;
+    private  TextBeeService textBeeService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        this.textBeeService = new TextBeeService();
 
         initializeViews();
         initializeServices();
@@ -90,24 +95,25 @@ public class MainActivity extends AppCompatActivity {
                     // Generate and save OTP
                      otp = otpService.generateOtp(phonenumber);
                     authRepository.saveOtpForPhone(phonenumber, otp);
+                    Toast.makeText(getApplicationContext(), "OTP is Sent", Toast.LENGTH_SHORT).show();
+                    navigateToOtpScreen(otp, phonenumber);
 
                     // Send OTP via SMS service
-                    boolean sent = otpService.sendOtp(phonenumber, otp);
+//                    textBeeService.sendOTP(phonenumber, otp, new TextBeeService.SMSCallback() {
+//                        @Override
+//                        public void onSuccess(String messageId) {
+//                            Toast.makeText(getApplicationContext(), "OTP is Sent", Toast.LENGTH_SHORT).show();
+//                            navigateToOtpScreen(otp, phonenumber);
+//                        }
+//
+//                        @Override
+//                        public void onFailure(String error) {
+//                            Toast.makeText(getApplicationContext(), "Failed to send OTP", Toast.LENGTH_SHORT).show();
+//                        }
+//                    });
 
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mprogressbarofmain.setVisibility(View.INVISIBLE);
-                            if (sent) {
-                                Toast.makeText(getApplicationContext(), "OTP is Sent", Toast.LENGTH_SHORT).show();
-                                navigateToOtpScreen(otp, phonenumber);
-                            } else {
 
-                                Toast.makeText(getApplicationContext(), "Failed to send OTP", Toast.LENGTH_SHORT).show();
 
-                            }
-                        }
-                    });
                 } catch (Exception e) {
                     runOnUiThread(new Runnable() {
                         @Override

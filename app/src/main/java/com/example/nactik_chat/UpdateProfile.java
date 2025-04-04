@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -12,196 +13,241 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
-import android.widget.Toolbar;
+import androidx.appcompat.widget.Toolbar;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
+import com.google.android.material.textfield.TextInputEditText;
 import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 
 public class UpdateProfile extends AppCompatActivity {
-    private EditText mnewusername;
-    private ImageView mgetnewimageinimageview;
-    private ProgressBar mprogressbarofupdateprofile;
-    private Button mupdateprofilebutton;
-    private ImageButton mbackbuttonofupdateprofile;
-    private Toolbar mtoolbarofupdateprofile;
+    private static final String TAG = "UpdateProfile";
+    private static final int PICK_IMAGE = 123;
+    private static final String CURRENT_TIME = "2025-04-03 01:19:23";
+    private static  String CURRENT_USER;
 
+    // UI Components
+    private MaterialCardView imageCardView;
+    private ImageView profileImageView;
+    private TextInputEditText usernameField;
+    private MaterialButton updateButton;
+    private CircularProgressIndicator progressBar;
+    private Toolbar toolbar;
+    private ImageButton backButton;
+
+    // Data Management
+    private SessionManager sessionManager;
     private UserRepository userRepository;
     private ImageRepository imageRepository;
-    private SessionManager sessionManager;
-
-    private Uri imagepath;
-    private static final int PICK_IMAGE = 123;
-    private String newname;
+    private Uri selectedImageUri;
     private String currentImageUrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_update_profile);
-
+         CURRENT_USER = getIntent().getStringExtra("Name");
+        initializeManagers();
         initializeViews();
-        initializeRepositories();
         setupToolbar();
-        loadCurrentUserData();
+        loadCurrentProfile();
         setupClickListeners();
+
+        Log.d(TAG, String.format("Update Profile activity started at %s for user %s",
+                CURRENT_TIME, CURRENT_USER));
+    }
+
+    private void initializeManagers() {
+        sessionManager = new SessionManager(this);
+        userRepository = new UserRepository();
+        imageRepository = new ImageRepository(this);
+
+        if (!sessionManager.isLoggedIn()) {
+            Log.w(TAG, String.format("User not logged in at %s", CURRENT_TIME));
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
+        }
     }
 
     private void initializeViews() {
-        mtoolbarofupdateprofile = findViewById(R.id.toolbarofupdateprofile);
-        mbackbuttonofupdateprofile = findViewById(R.id.backbuttonofupdateprofile);
-        mgetnewimageinimageview = findViewById(R.id.getnewuserimageinimageview);
-        mprogressbarofupdateprofile = findViewById(R.id.progressbarofupdateprofile);
-        mnewusername = findViewById(R.id.getnewusername);
-        mupdateprofilebutton = findViewById(R.id.updateprofilebutton);
-    }
+        imageCardView = findViewById(R.id.getnewuserimage);
+        profileImageView = findViewById(R.id.getnewuserimageinimageview);
+        String imagePath = getIntent().getStringExtra("Url");; // Change this path accordingly
+        Glide.with(this).load(new File(imagePath)).into(profileImageView);
 
-    private void initializeRepositories() {
-        userRepository = new UserRepository();
-        imageRepository = new ImageRepository(this);
-        sessionManager = new SessionManager(this);
+        usernameField = findViewById(R.id.getnewusername);
+        usernameField.setText(CURRENT_USER);
+        updateButton = findViewById(R.id.updateprofilebutton);
+        progressBar = findViewById(R.id.progressbarofupdateprofile);
+        toolbar = findViewById(R.id.toolbarofupdateprofile);
+        backButton = findViewById(R.id.backbuttonofupdateprofile);
     }
 
     private void setupToolbar() {
-        setSupportActionBar(mtoolbarofupdateprofile);
-        mbackbuttonofupdateprofile.setOnClickListener(v -> finish());
-    }
-
-    private void setSupportActionBar(Toolbar mtoolbarofupdateprofile) {
-        // Set the toolbar title
-        mtoolbarofupdateprofile.setTitle("Update Profile");
-
-        // Set the toolbar as the action bar
-        setSupportActionBar(mtoolbarofupdateprofile);
-
-        // Enable back button in toolbar
+        setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setDisplayShowHomeEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
-
-        // Set navigation click listener
-        mtoolbarofupdateprofile.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
+        backButton.setOnClickListener(v -> onBackPressed());
     }
 
-
-    private void loadCurrentUserData() {
-        Long userId = sessionManager.getUserId();
+    private void loadCurrentProfile() {
+        showLoading();
         new Thread(() -> {
             try {
+                Long userId = sessionManager.getUserId();
                 User user = userRepository.getUserById(userId);
+
                 runOnUiThread(() -> {
-                    mnewusername.setText(user.getName());
-                    if (user.getImageUrl() != null && !user.getImageUrl().isEmpty()) {
-                        currentImageUrl = user.getImageUrl();
-                        Picasso.get().load(user.getImageUrl()).into(mgetnewimageinimageview);
+                    if (user != null) {
+                        usernameField.setText(user.getName());
+                        if (user.getImageUrl() != null && !user.getImageUrl().isEmpty()) {
+                            currentImageUrl = user.getImageUrl();
+                            Picasso.get()
+                                    .load(currentImageUrl)
+                                    .placeholder(R.drawable.defaultprofile)
+                                    .error(R.drawable.defaultprofile)
+                                    .into(profileImageView);
+                        }
                     }
+                    hideLoading();
                 });
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(this, "Failed to load user data", Toast.LENGTH_SHORT).show());
+                Log.e(TAG, String.format("Error loading profile at %s: %s",
+                        CURRENT_TIME, e.getMessage()));
+                runOnUiThread(() -> {
+                    showError("Failed to load profile");
+                    hideLoading();
+                });
             }
         }).start();
     }
 
     private void setupClickListeners() {
-        mgetnewimageinimageview.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
-            startActivityForResult(intent, PICK_IMAGE);
-        });
+        imageCardView.setOnClickListener(v -> selectImage());
+        updateButton.setOnClickListener(v -> updateProfile());
+    }
 
-        mupdateprofilebutton.setOnClickListener(v -> updateProfile());
+    private void selectImage() {
+        Intent intent = new Intent(Intent.ACTION_PICK,
+                MediaStore.Images.Media.INTERNAL_CONTENT_URI);
+        startActivityForResult(intent, PICK_IMAGE);
+
     }
 
     private void updateProfile() {
-        newname = mnewusername.getText().toString().trim();
-        if (newname.isEmpty()) {
-            Toast.makeText(this, "Name is Empty", Toast.LENGTH_SHORT).show();
+        String newUsername = usernameField.getText().toString().trim();
+        if (newUsername.isEmpty()) {
+            usernameField.setError("Username cannot be empty");
             return;
         }
 
-        mprogressbarofupdateprofile.setVisibility(View.VISIBLE);
+        showLoading();
         new Thread(() -> {
             try {
                 Long userId = sessionManager.getUserId();
-                String imageUrl = imagepath != null ?
-                        uploadImage(userId, imagepath) : currentImageUrl;
+                String imageUrl = selectedImageUri != null ?
+                        uploadImage(selectedImageUri) : currentImageUrl;
 
-                User updatedUser = new User(userId, newname, imageUrl, "Online", sessionManager.getUserphone());
+                User updatedUser = new User(
+                        userId,
+                        newUsername,
+                        imageUrl,
+                        "Online",
+                        sessionManager.getUserphone()
+                );
+
                 userRepository.updateUser(updatedUser);
 
                 runOnUiThread(() -> {
-                    mprogressbarofupdateprofile.setVisibility(View.INVISIBLE);
-                    Toast.makeText(this, "Profile Updated Successfully", Toast.LENGTH_SHORT).show();
-                    navigateToChatActivity();
+                    showSuccess("Profile updated successfully");
+                    hideLoading();
+                    finish();
                 });
+
+                Log.d(TAG, String.format("Profile updated at %s for user %s",
+                        CURRENT_TIME, userId));
+
             } catch (Exception e) {
+                Log.e(TAG, String.format("Error updating profile at %s: %s",
+                        CURRENT_TIME, e.getMessage()));
                 runOnUiThread(() -> {
-                    mprogressbarofupdateprofile.setVisibility(View.INVISIBLE);
-                    Toast.makeText(this, "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    showError("Failed to update profile");
+                    hideLoading();
                 });
             }
         }).start();
     }
 
-    private String uploadImage(long userId, Uri imageUri) throws IOException {
-        // Compress image
+    private String uploadImage(Uri imageUri) throws IOException {
         Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 25, baos);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, baos);
         byte[] imageData = baos.toByteArray();
 
-        // Upload to server
-        return imageRepository.uploadImage(userId, imageData);
+        return imageRepository.uploadImage(
+                sessionManager.getUserId(),
+                imageData
+        );
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE && resultCode == RESULT_OK && data != null) {
-            imagepath = data.getData();
-            mgetnewimageinimageview.setImageURI(imagepath);
+            selectedImageUri = data.getData();
+            try {
+                Picasso.get()
+                        .load(selectedImageUri)
+                        .placeholder(R.drawable.defaultprofile)
+                        .error(R.drawable.defaultprofile)
+                        .into(profileImageView);
+            } catch (Exception e) {
+                Log.e(TAG, String.format("Error loading selected image at %s: %s",
+                        CURRENT_TIME, e.getMessage()));
+                showError("Failed to load selected image");
+            }
         }
     }
 
-    private void navigateToChatActivity() {
-        Intent intent = new Intent(this, chatActivity.class);
-        startActivity(intent);
-        finish();
+    private void showLoading() {
+        progressBar.setVisibility(View.VISIBLE);
+        updateButton.setEnabled(false);
+    }
+
+    private void hideLoading() {
+        progressBar.setVisibility(View.GONE);
+        updateButton.setEnabled(true);
+    }
+
+    private void showError(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void showSuccess(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        updateUserStatus("Online");
+    protected void onDestroy() {
+        super.onDestroy();
+        if (profileImageView != null) {
+            profileImageView.setImageDrawable(null);
+        }
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        updateUserStatus("Offline");
-    }
-
-    private void updateUserStatus(String status) {
-        new Thread(() -> {
-            try {
-                userRepository.updateUserStatus(sessionManager.getUserId(), status);
-                if (status.equals("Offline")) {
-                    runOnUiThread(() -> Toast.makeText(this, "Now User is Offline", Toast.LENGTH_SHORT).show());
-                } else {
-                    runOnUiThread(() -> Toast.makeText(this, "Now User is Online", Toast.LENGTH_SHORT).show());
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
+    public void onBackPressed() {
+        super.onBackPressed();
+        Log.d(TAG, String.format("Update Profile activity closing at %s", CURRENT_TIME));
     }
 }

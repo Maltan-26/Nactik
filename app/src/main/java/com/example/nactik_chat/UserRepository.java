@@ -76,6 +76,7 @@ public class UserRepository {
                 }
             }
         }
+        System.out.println(chatRooms);
 
         return chatRooms;
     }

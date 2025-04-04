@@ -43,7 +43,9 @@ public class chatActivity extends AppCompatActivity {
     private Long currentUserId;
     private String currentRoomId;
     private static final String TAG = "chatActivity";
-    private static final String CURRENT_USER = "Maltan-26";
+    private static  String CURRENT_USER ;
+
+    private static String url;
     private static final long TOAST_DELAY = 5000; // 5 seconds
     private long lastToastTime = 0;
     private MessagesAdapter messagesAdapter;
@@ -52,7 +54,7 @@ public class chatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
-
+        CURRENT_USER = getIntent().getStringExtra("Name");
         String currentTime = TimeUtils.getCurrentUTCTime(); // 2025-03-31 08:19:05
         Log.d(TAG, String.format("Creating chatActivity at %s for user %s",
                 currentTime, CURRENT_USER));
@@ -68,6 +70,37 @@ public class chatActivity extends AppCompatActivity {
             setupMessagePolling(currentRoomId);
         } else {
             Log.w(TAG, String.format("No room ID provided at %s", currentTime));
+        }
+    }
+    private void openProfile() {
+        String currentTime = TimeUtils.getCurrentUTCTime();
+        try {
+            Intent intent = new Intent(this, ProfileActivity.class);
+            intent.putExtra("userId", CURRENT_USER);
+            intent.putExtra("Url", url);
+            startActivity(intent);
+            Log.d(TAG, String.format("Opening profile activity at %s for user %d",
+                    currentTime, CURRENT_USER));
+        } catch (Exception e) {
+            Log.e(TAG, String.format("Error opening profile at %s: %s",
+                    currentTime, e.getMessage()));
+            Toast.makeText(this, "Unable to open profile", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void openSettings() {
+        String currentTime = TimeUtils.getCurrentUTCTime();
+        try {
+            Intent intent = new Intent(this, UpdateProfile.class);
+            intent.putExtra("userId", CURRENT_USER);
+            intent.putExtra("Url", url);
+            startActivity(intent);
+            Log.d(TAG, String.format("Opening settings activity at %s for user %d",
+                    currentTime, CURRENT_USER));
+        } catch (Exception e) {
+            Log.e(TAG, String.format("Error opening settings at %s: %s",
+                    currentTime, e.getMessage()));
+            Toast.makeText(this, "Unable to open settings", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -116,6 +149,7 @@ public class chatActivity extends AppCompatActivity {
             messagesAdapter = new MessagesAdapter(this, currentUserId);
             recyclerView.setAdapter(messagesAdapter);
             recyclerView.setLayoutManager(new LinearLayoutManager(this));
+            url = getIntent().getStringExtra("Url");
 
             Log.d(TAG, String.format("Views initialized at %s", currentTime));
         } catch (Exception e) {
@@ -226,11 +260,11 @@ public class chatActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.profile) {
-            startActivity(new Intent(this, ProfileActivity.class));
+            openProfile();
             return true;
 
         } else if (item.getItemId() == R.id.settings) {
-            Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show();
+            openSettings();
             return true;
         } else {
             return super.onOptionsItemSelected(item);

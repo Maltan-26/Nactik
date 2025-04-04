@@ -58,7 +58,8 @@ dependencies {
     implementation ("io.ktor:ktor-client-android:2.3.7")
     implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    // Coroutines
+    implementation ("com.squareup.okhttp3:okhttp:4.9.1")
+    implementation ("com.google.code.gson:gson:2.8.9")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     coreLibraryDesugaring ("com.android.tools:desugar_jdk_libs:2.0.4")

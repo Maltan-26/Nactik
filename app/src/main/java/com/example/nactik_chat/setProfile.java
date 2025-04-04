@@ -133,6 +133,7 @@ public class setProfile extends AppCompatActivity {
                     // Navigate to chat activity
                     Intent intent = new Intent(setProfile.this, chatActivity.class);
                     intent.putExtra("Name", name);
+                    intent.putExtra("imagePath", imagePath);
                     startActivity(intent);
                     finish();
                 });

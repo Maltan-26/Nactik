@@ -108,11 +108,11 @@
                 android:layout_height="wrap_content"
                 android:background="@null"
                 android:hint="@string/message_hint"
+                android:layout_marginTop="6dp"
                 android:inputType="textMultiLine"
-                android:maxLines="4"
                 android:minHeight="48dp"
                 android:padding="12dp"
-                android:textSize="16sp"/>
+                android:textSize="16sp" />
 
         </com.google.android.material.card.MaterialCardView>
 
@@ -124,7 +124,8 @@
             android:layout_centerVertical="true"
             android:contentDescription="@string/send_button_description"
             app:fabSize="normal"
-            app:tint="@color/white"
+            android:backgroundTint="@color/fab_background"
+            app:tint="@color/chat_background"
             android:src="@drawable/ic_send"/>
 
     </RelativeLayout>
