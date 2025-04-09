@@ -74,12 +74,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/section_margin"
-                android:text="@string/recent_updates"
-                android:textColor="@color/white"
+                android:text="Status Feture is in Future scope"
+                android:textColor="@color/fab_background"
                 android:textSize="@dimen/section_title_text_size"
                 android:textStyle="bold"
-                app:layout_constraintTop_toBottomOf="@id/myStatusCard"
-                app:layout_constraintStart_toStartOf="parent"/>
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/myStatusCard" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/statusRecyclerView"

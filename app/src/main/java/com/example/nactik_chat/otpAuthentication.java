@@ -16,7 +16,6 @@ import com.google.android.material.textfield.TextInputEditText;
 public class otpAuthentication extends AppCompatActivity {
     private static final String TAG = "otpAuthentication";
     private static final String CURRENT_TIME = "2025-03-27 17:15:45";
-    private static final String CURRENT_USER = "Maltan-26";
 
     // UI Components
     private TextInputEditText getotpEditText;
@@ -46,7 +45,7 @@ public class otpAuthentication extends AppCompatActivity {
         phoneNumber = getIntent().getStringExtra("phoneNumber");
         if (phoneNumber == null || phoneNumber.isEmpty()) {
             Log.e(TAG, "Phone number not provided");
-            Toast.makeText(this, "Error: Phone number not found", Toast.LENGTH_SHORT).show();
+
             finish();
             return;
         }
@@ -113,8 +112,7 @@ public class otpAuthentication extends AppCompatActivity {
                 runOnUiThread(() -> {
                     progressBar.setVisibility(View.GONE);
                     verifyOtpButton.setEnabled(true);
-                    Toast.makeText(otpAuthentication.this,
-                            "Error verifying OTP", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(otpAuthentication.this,"Error verifying OTP", Toast.LENGTH_SHORT).show();
                 });
             }
         }).start();

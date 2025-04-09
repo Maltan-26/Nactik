@@ -184,7 +184,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void showError(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+
     }
 
     @Override

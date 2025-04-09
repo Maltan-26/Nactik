@@ -182,7 +182,6 @@ public class UpdateProfile extends AppCompatActivity {
                 userRepository.updateUser(updatedUser);
 
                 runOnUiThread(() -> {
-                    showSuccess("Profile updated successfully");
                     hideLoading();
                     finish();
                 });
@@ -243,7 +242,7 @@ public class UpdateProfile extends AppCompatActivity {
     }
 
     private void showError(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+
     }
 
     private void showSuccess(String message) {

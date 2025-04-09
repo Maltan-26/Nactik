@@ -135,7 +135,7 @@ public class chatFragment extends Fragment {
                         currentTime, e.getMessage()));
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
-                        showError("Failed to load chat rooms");
+
                         hideLoadingState();
                         isLoadingRooms = false;
                     });

@@ -127,8 +127,6 @@ public class setProfile extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                     mprogressbarofsetprofile.setVisibility(View.INVISIBLE);
-                    Toast.makeText(getApplicationContext(),
-                            "Profile saved successfully", Toast.LENGTH_SHORT).show();
 
                     // Navigate to chat activity
                     Intent intent = new Intent(setProfile.this, chatActivity.class);
@@ -206,7 +204,7 @@ public class setProfile extends AppCompatActivity {
     private void showError(String message) {
         runOnUiThread(() -> {
             mprogressbarofsetprofile.setVisibility(View.INVISIBLE);
-            Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+
         });
     }
 
@@ -220,7 +218,6 @@ public class setProfile extends AppCompatActivity {
                 mgetuserimageinimageview.setImageURI(imagepath);
             } catch (Exception e) {
                 Log.e(TAG, "Error setting image: " + e.getMessage());
-                Toast.makeText(this, "Error loading image", Toast.LENGTH_SHORT).show();
             }
         }
     }

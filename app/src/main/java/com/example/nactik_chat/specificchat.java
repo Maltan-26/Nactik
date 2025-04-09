@@ -109,7 +109,7 @@ public class specificchat extends AppCompatActivity {
 
         setupClickListeners();
         createChatRoomIfNeeded();
-        loadMessages();
+
         // loadMessages will be called from createChatRoomIfNeeded
     }
 
@@ -120,9 +120,11 @@ public class specificchat extends AppCompatActivity {
                 try {
                     if(userRepository.isRoomExist(userRepository.generateRoomId(CURRENT_USER, receiverUserId))){
                         roomId = userRepository.generateRoomId(CURRENT_USER, receiverUserId);
+                        loadMessages();
                     }
                     else if(userRepository.isRoomExist(userRepository.generateRoomIdr(CURRENT_USER, receiverUserId))){
                         roomId = userRepository.generateRoomIdr(CURRENT_USER, receiverUserId);
+                        loadMessages();
                     }
                     else {
 
@@ -199,9 +201,7 @@ public class specificchat extends AppCompatActivity {
                         sendButton.setEnabled(true);
                         messagesArrayList.remove(pendingMessage);
                         messagesAdapter.notifyDataSetChanged();
-                        Toast.makeText(specificchat.this,
-                                "Failed to send message: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show();
+
                     });
                 }
             });
@@ -231,8 +231,7 @@ public class specificchat extends AppCompatActivity {
                         @Override
                         public void onError(Exception e) {
 
-                            Toast.makeText(specificchat.this, "Failed to load messages: " + e.getMessage(),
-                                    Toast.LENGTH_SHORT).show();
+
                             new Thread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -243,6 +242,7 @@ public class specificchat extends AppCompatActivity {
                     });
                 } catch (Exception e) {
                     e.printStackTrace();
+                    loadMessages();
                 }
             }}).start();
 

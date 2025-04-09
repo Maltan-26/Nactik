@@ -100,7 +100,7 @@ public class chatActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, String.format("Error opening settings at %s: %s",
                     currentTime, e.getMessage()));
-            Toast.makeText(this, "Unable to open settings", Toast.LENGTH_SHORT).show();
+
         }
     }
 
@@ -216,7 +216,7 @@ public class chatActivity extends AppCompatActivity {
 
                         @Override
                         public void onError(String error) {
-                            runOnUiThread(() -> showError(error));
+
                         }
                     });
         } catch (Exception e) {
@@ -237,7 +237,7 @@ public class chatActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, String.format("Error updating messages at %s: %s",
                     currentTime, e.getMessage()));
-            showError("Failed to update messages");
+
         }
     }
 
@@ -284,8 +284,7 @@ public class chatActivity extends AppCompatActivity {
                 try {
                     userRepository.updateUserStatus(currentUserId, status);
                 } catch (Exception e) {
-                    runOnUiThread(() -> Toast.makeText(chatActivity.this,
-                            "Failed to update status", Toast.LENGTH_SHORT).show());
+
                 }
             }).start();
         }
