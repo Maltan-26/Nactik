@@ -2,7 +2,11 @@ package com.example.nactik_chat;
 
 import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -12,12 +16,16 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.hbb20.CountryCodePicker;
 
 public class MainActivity extends AppCompatActivity {
     private EditText mgetphonenumber;
     private Button msendotp;
+    private final String CHANNEL_ID = "otp_notification_channel";
     private CountryCodePicker mcountrycodepicker;
     private String countrycode;
     private String phonenumber;
@@ -32,13 +40,21 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         this.textBeeService = new TextBeeService();
-
+        createNotificationChannel();
+        requestNotificationPermission();
         initializeViews();
         initializeServices();
         setupCountryCodePicker();
         setupSendOtpButton();
-    }
 
+    }
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+    }
     private void initializeViews() {
         mcountrycodepicker = findViewById(R.id.countrycodepicker);
         msendotp = findViewById(R.id.sendotpbutton);
@@ -95,8 +111,17 @@ public class MainActivity extends AppCompatActivity {
                     // Generate and save OTP
                      otp = otpService.generateOtp(phonenumber);
                     authRepository.saveOtpForPhone(phonenumber, otp);
-                    Toast.makeText(getApplicationContext(), "OTP is Sent", Toast.LENGTH_SHORT).show();
-                    navigateToOtpScreen(otp, phonenumber);
+
+                    runOnUiThread(() -> {
+
+                        mprogressbarofmain.setVisibility(View.INVISIBLE);
+                        // Show OTP using a notification
+                        showOtpNotification(otp);
+                        Toast.makeText(getApplicationContext(), "OTP Notification Sent", Toast.LENGTH_SHORT).show();
+                        navigateToOtpScreen(otp, phonenumber);
+                    });
+
+
 
                     // Send OTP via SMS service
 //                    textBeeService.sendOTP(phonenumber, otp, new TextBeeService.SMSCallback() {
@@ -125,8 +150,37 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                 }
+
             }
         }).start();
+    }
+    private void showOtpNotification(String otp) {
+        // Build the notification with the OTP information
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.mychatapplogo) // Replace with your notification icon
+                .setContentTitle("OTP Verification")
+                .setContentText("Your OTP is: " + otp)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true);
+
+        // Display the notification with a unique notification ID (e.g., 101)
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            notificationManager.notify(101, builder.build());
+        }
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "OTP Notification";
+            String description = "Channel for OTP notifications";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
     }
 
     private void navigateToOtpScreen(String otp,String phonenumber) {

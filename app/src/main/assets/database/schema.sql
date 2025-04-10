@@ -4,7 +4,7 @@
 
 -- Users Table
 CREATE TABLE IF NOT EXISTS users (
-    user_id VARCHAR(50) PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(100) NOT NULL,
     phone_number VARCHAR(15) UNIQUE NOT NULL,
     profile_image_url TEXT,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS chat_rooms (
 -- Room Participants Table
 CREATE TABLE IF NOT EXISTS room_participants (
     room_id VARCHAR(100),
-    user_id VARCHAR(50),
+    user_id BIGINT,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_read_message_id BIGINT,
     PRIMARY KEY (room_id, user_id),
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS room_participants (
 CREATE TABLE IF NOT EXISTS messages (
     message_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     room_id VARCHAR(100) NOT NULL,
-    sender_uid VARCHAR(50) NOT NULL,
+    sender_uid BIGINT NOT NULL,
     message_text TEXT NOT NULL,
     timestamp BIGINT NOT NULL,
     time_string VARCHAR(30) NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS otp_verification (
 -- User Status Updates
 CREATE TABLE IF NOT EXISTS user_status (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id VARCHAR(50) NOT NULL,
+    user_id BIGINT NOT NULL,
     status_text TEXT,
     media_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -77,8 +77,8 @@ CREATE TABLE IF NOT EXISTS user_status (
 
 -- User Blocking Table
 CREATE TABLE IF NOT EXISTS user_blocks (
-    blocker_id VARCHAR(50),
-    blocked_id VARCHAR(50),
+    blocker_id BIGINT,
+    blocked_id BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (blocker_id, blocked_id),
     FOREIGN KEY (blocker_id) REFERENCES users(user_id) ON DELETE CASCADE,

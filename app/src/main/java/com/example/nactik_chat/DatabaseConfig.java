@@ -7,9 +7,9 @@ public class DatabaseConfig {
     public static final String SUPABASE_DATABASE_PASSWORD = "nactik4848";
 
     // Database connection details
-    public static final String DB_URL = "jdbc:mysql://sql12.freesqldatabase.com:3306/sql12770149?useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=30000";
-    public static final String DB_USER = "sql12770149";
-    public static final String DB_PASSWORD = "hKdX8jzadP";
+    public static final String DB_URL = "jdbc:mysql://sql12.freesqldatabase.com:3306/sql12772383?useSSL=false&allowPublicKeyRetrieval=true&connectTimeout=5000&socketTimeout=30000";
+    public static final String DB_USER = "sql12772383";
+    public static final String DB_PASSWORD = "fbVGRvYmK8";
 
     // Connection pool settings
     public static final int INITIAL_POOL_SIZE = 3;
